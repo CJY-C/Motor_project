@@ -15,6 +15,7 @@ struct PIDController
 	float d_Time;  	/**< 测量时间间隔	*/
 	
 	// 变化量
+	float ll_Error; 	/**< 上上一次误差 */
 	float l_Error; 	/**< 上一次误差 */
 	float c_Error; 	/**< 当前误差 */
 	float s_Error; 	/**< 累计误差 */

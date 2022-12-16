@@ -1,7 +1,10 @@
 #include "motor.h"
 #include "tim.h"
 
+#include <stdio.h>
 
+
+extern uint8_t huart_switch;
 // 电机转动控制
 void MS_Motor_Init(uint16_t e_press, float min, float max)
 {
@@ -69,6 +72,7 @@ int16_t MS_Motor_Set_ePress(uint16_t epress)
 	if (epress <= motor.Max && epress >= motor.Min)
 	{
 		motor.e_Press = epress;
+		// motor.e_Press = epress - 2 * epress * (epress/(motor.Max - motor.Min));
 		return epress;
 	}
 	return -1;
@@ -82,11 +86,7 @@ void MS_Motor_PWM_Up(uint8_t value)
 	motor.PWM += value;
 	if (motor.PWM > 34)
 		motor.PWM = 34;
-	// (motor.PWM < 34) ? (motor.PWM += value) : (motor.PWM = 34);
 	__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, motor.PWM);
-	// if (motor.e_Press < motor.Max)
-	// 	motor.e_Press += 5;
-	// TODO: 速度超过最大值后的处理方式
 }
 
 void MS_Motor_PWM_Down(uint8_t value)
@@ -95,11 +95,7 @@ void MS_Motor_PWM_Down(uint8_t value)
 	motor.PWM -= value;
 	if (motor.PWM < 24)
 		motor.PWM = 20;
-	// (motor.PWM > 24) ? (motor.PWM -= value) : (motor.PWM = 20);
 	__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, motor.PWM);
-	// if (motor.e_Press > motor.Min)
-	// 	motor.e_Press -= 5;
-	// TODO: 速度小于最小值后的处理方式
 }
 
 inline uint16_t MS_Motor_GetPWM()
@@ -116,6 +112,7 @@ void MS_Press_PID_Param_Set(float kp, float ki, float kd)
 }
 void MS_Press_PID_Param_Reset()
 {
+	press_ctrl.ll_Error = 0;
 	press_ctrl.l_Error = 0;
 	press_ctrl.c_Error = 0;
 	press_ctrl.s_Error = 0;
@@ -126,24 +123,39 @@ void MS_Press_PID_Param_Reset()
 // PID 计算更新
 void MS_Press_PID_Update()
 {
-	if (motor.Status == MOTOR_STOP)
-		return;
+	// if (motor.Status == MOTOR_STOP)
+	// 	return;
 
-	if (motor.c_Press > motor.e_Press && motor.Status != MOTOR_BACKWARD)
-		MS_Motor_Direction(MOTOR_BACKWARD);
-	else if (motor.Status != MOTOR_FOREWARD)
-		MS_Motor_Direction(MOTOR_FOREWARD);
+	// if (motor.c_Press > motor.e_Press && motor.Status != MOTOR_BACKWARD)
+	// 	MS_Motor_Direction(MOTOR_BACKWARD);
+	// else if (motor.Status != MOTOR_FOREWARD)
+	// 	MS_Motor_Direction(MOTOR_FOREWARD);
 
+	int16_t __abs(int16_t number);
 	press_ctrl.l_Error = press_ctrl.c_Error; //* 保存上一次的误差
 	press_ctrl.c_Error = motor.e_Press - motor.c_Press;	//* 计算当前误差
+		// press_ctrl.c_Error = __abs(motor.e_Press - motor.c_Press);	//* 计算当前误差
 	press_ctrl.d_Error = (press_ctrl.c_Error - press_ctrl.l_Error);
 	// press_ctrl.d_Error = (press_ctrl.c_Error - press_ctrl.l_Error) / press_ctrl.d_Time; //* 计算误差的导数																							
 
 	// 计算占空比
 	int16_t d_PWM = press_ctrl.Kp * press_ctrl.d_Error 
 						 		+ press_ctrl.Ki * press_ctrl.c_Error; 
+	if (motor.Status == MOTOR_BACKWARD)
+		d_PWM = - d_PWM;
+	PC_USART("d_PWM: %d\n", d_PWM);
+	if (motor.Status == MOTOR_STOP)
+			return;
 	if (d_PWM > 0)
 		MS_Motor_PWM_Up(d_PWM);
 	else
-		MS_Motor_PWM_Down(-d_PWM);
+		MS_Motor_PWM_Down(__abs(d_PWM));
+}
+
+int16_t __abs(int16_t number)
+{
+	if (number >= 0)
+		return number;
+	else
+		return -number;
 }

@@ -58,6 +58,7 @@ uint8_t buf[1] = {0};
 osPoolId SensorDataPHandle;
 
 struct Motor motor;									// 电机模型
+uint8_t motor_en = 0;
 struct PIDController press_ctrl;    // 压力控制器
 
 /* USER CODE END Variables */
@@ -212,7 +213,7 @@ void DataManagerEntry(void const *argument)
     eSensorValue = osMessageGet(SensorQHandle, osWaitForever);
     if (eSensorValue.status == osEventMessage)
     {
-      PC_USART("Data Manager task read Queue: %d\n", *(uint32_t *)eSensorValue.value.p);
+      // PC_USART("Data Manager task read Queue: %d\n", *(uint32_t *)eSensorValue.value.p);
       // * 蓝牙消息发送思路，手机端添加指令，根据指令反馈消息
       osEvent ePhone;
       ePhone = osSignalWait(PHONE_DATA_REQUEST, 100);
@@ -226,7 +227,7 @@ void DataManagerEntry(void const *argument)
 
       osPoolFree(SensorDataPHandle, eSensorValue.value.p);
     }
-    osDelay(900);
+    osDelay(500);
   }
   /* USER CODE END DataManagerEntry */
 }
@@ -263,7 +264,7 @@ void MotorControlEntry(void const *argument)
 {
   /* USER CODE BEGIN MotorControlEntry */
   MS_Motor_Init(1700, 100, 2000);
-  MS_Press_PID_Param_Set(0.05, 0.1, 0);
+  MS_Press_PID_Param_Set(0.1, 0.05, 0);
   MS_Press_PID_Param_Reset();
   /* Infinite loop */
   PC_USART("Waiting for Start command!\n");
@@ -272,7 +273,7 @@ void MotorControlEntry(void const *argument)
   {
     osEvent evt;
     evt = osSignalWait(PHONE_MOTOR_REQUEST, 100);
-    if (evt.status == osEventSignal || motor.Status != last_status)
+    if (evt.status == osEventSignal ||(motor_en && motor.Status != last_status))
     {
       MS_Motor_Update();
       last_status = motor.Status;
