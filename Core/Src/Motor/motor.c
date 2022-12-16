@@ -10,7 +10,6 @@ void MS_Motor_Init(uint16_t e_press, float min, float max)
 	motor.Max = max;
 	
 	motor.c_Press = 0;
-	motor.T =0;
 	motor.PWM = 30;
 	motor.Status = MOTOR_STOP;
 }

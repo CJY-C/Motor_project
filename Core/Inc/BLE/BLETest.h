@@ -49,7 +49,7 @@ void bletest_led_off(void);
 
 /// @brief 向手机发送当前压力数值
 /// @param void
-// TODO: 可以选择接收一组压力数值
+// TODO: 可以选择发送一组压力数值
 void bletest_update(void);
 
 /// @brief 启动电机指令

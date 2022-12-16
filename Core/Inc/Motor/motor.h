@@ -26,7 +26,6 @@ struct Motor
 	uint16_t e_Press; 							/**< 期望压力	 */
 	
 	// 变化量
-	float T;												/**< 转矩 */
 	int16_t c_Press; 									/**< 当前压力 */
 	uint16_t PWM;  									/**< PWM输入 */
 	enum MotorStatus Status; 	      /**< 电机状态 */

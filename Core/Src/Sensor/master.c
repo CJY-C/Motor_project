@@ -5,9 +5,6 @@
 
 #include "cmsis_os.h"
 
-// uint32_t RS485_Baudrate = 19200;		 // 通讯波特率
-// uint8_t RS485_Parity = 0;					 // 0无校验；1奇校验；2偶校验
-// uint16_t RS485_Frame_Distance = 2; // 数据帧最小间隔（ms),超过此时间则认为是下一帧 在此为tim7负责进行延时
 
 // TODO: 接收缓冲区大小调整
 uint8_t RS485_RX_BUFF[2048] = {0}; // 接收缓冲区2048字节
@@ -16,7 +13,6 @@ uint8_t RS485_RxFlag = 0;					 // 接收一帧结束标记
 
 uint8_t RS485_TX_BUFF[2048]; // 发送缓冲区
 uint16_t RS485_TX_CNT = 0;	 // 发送计数器
-// uint8_t RS485_TxFlag = 0;		 // 发送一帧结束标记
 
 /////////////////////////////////////////////////////////////////////////////////////
 // 主机命令区
@@ -78,7 +74,7 @@ void Modbus_RegMap(void) // 功能码0x06使用
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// CRC校验 自己后面添加的
+// CRC校验 
 
 const uint8_t auchCRCHi[] = {
 		0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
@@ -128,172 +124,8 @@ uint16_t CRC_Compute(uint8_t *puchMsg, uint16_t usDataLen)
 // 初始化USART2
 void RS485_Init(void)
 {
-	EN_485_TX_L; // 默认接收模式
-							 // GPIO_InitTypeDef GPIO_InitStructure;
-							 // USART_InitTypeDef USART_InitStructure;
-							 // NVIC_InitTypeDef NVIC_InitStructure;
-							 // RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA|RCC_APB2Periph_GPIOD,ENABLE);
-							 // RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2,ENABLE);
-
-	// GPIO_InitStructure.GPIO_Pin=GPIO_Pin_2;//PA2（TX）复用推挽输出
-	// GPIO_InitStructure.GPIO_Mode=GPIO_Mode_AF_PP;
-	// GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-	// GPIO_Init(GPIOA,&GPIO_InitStructure);
-	// GPIO_SetBits(GPIOA,GPIO_Pin_2);//默认高电平
-
-	// GPIO_InitStructure.GPIO_Pin=GPIO_Pin_3;//PA3（RX）输入上拉
-	// GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IN_FLOATING;   //修改原GPIO_Mode_IPU（输入上拉）->GPIO_Mode_IN_FLOATING(浮空输入)/////////////////////////////////////////////
-	// GPIO_Init(GPIOA,&GPIO_InitStructure);
-
-	// GPIO_InitStructure.GPIO_Pin=GPIO_Pin_7;//修改PG9（RE/DE）通用推挽输出->PD7（RE/DE）通用推挽输出//////////////////////////////////////////////////////////////////////
-	// GPIO_InitStructure.GPIO_Mode=GPIO_Mode_Out_PP;
-	// GPIO_Init(GPIOD,&GPIO_InitStructure);
-	// GPIO_ResetBits(GPIOD,GPIO_Pin_7);//默认接收状态
-
-	// USART_DeInit(USART2);//复位串口2
-	// USART_InitStructure.USART_BaudRate=RS485_Baudrate;
-	// USART_InitStructure.USART_HardwareFlowControl=USART_HardwareFlowControl_None;
-	// USART_InitStructure.USART_WordLength=USART_WordLength_8b;
-	// USART_InitStructure.USART_StopBits=USART_StopBits_1;
-	// USART_InitStructure.USART_Mode=USART_Mode_Rx|USART_Mode_Tx;//收发模式
-	// switch(RS485_Parity)
-	// {
-	//         case 0:USART_InitStructure.USART_Parity=USART_Parity_No;break;//无校验
-	//         case 1:USART_InitStructure.USART_Parity=USART_Parity_Odd;break;//奇校验
-	//         case 2:USART_InitStructure.USART_Parity=USART_Parity_Even;break;//偶校验
-	// }
-	// USART_Init(USART2,&USART_InitStructure);
-
-	// USART_ClearITPendingBit(USART2,USART_IT_RXNE);
-	// USART_ITConfig(USART2,USART_IT_RXNE,ENABLE);//使能串口2接收中断
-
-	// NVIC_InitStructure.NVIC_IRQChannel=USART2_IRQn;
-	// NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=2;
-	// NVIC_InitStructure.NVIC_IRQChannelSubPriority=2;
-	// NVIC_InitStructure.NVIC_IRQChannelCmd=ENABLE;
-	// NVIC_Init(&NVIC_InitStructure);
-
-	// USART_Cmd(USART2,ENABLE);//使能串口2
-	// RS485_TX_EN=1;//默认为接收模式
-
-	// Timer7_Init();//定时器7初始化，用于监视空闲时间
+	EN_485_TX_L; 
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-// 定时器4初始化
-// 定时1s进行通讯，分2步，前500ms进行发送功能，后500ms处理从机返回的数据
-void Timer4_enable(uint16_t arr) // TIM4使能
-{
-	// TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-	// NVIC_InitTypeDef NVIC_InitStructure;
-
-	// RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE); //时钟使能
-	// TIM_TimeBaseStructure.TIM_Period = arr; //设置在下一个更新事件装入活动的自动重装载寄存器周期的值	 计数到5000为500ms
-	// TIM_TimeBaseStructure.TIM_Prescaler = 7199; //设置用来作为TIMx时钟频率除数的预分频值  10Khz的计数频率
-	// TIM_TimeBaseStructure.TIM_ClockDivision = 0; //设置时钟分割:TDTS = Tck_tim
-	// TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;  //TIM向上计数模式
-	// TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure); //根据TIM_TimeBaseInitStruct中指定的参数初始化TIMx的时间基数单位
-
-	// TIM_ITConfig(  //使能或者失能指定的TIM中断
-	// 	TIM4, //TIM2
-	// 	TIM_IT_Update  |  //TIM 中断源
-	// 	TIM_IT_Trigger,   //TIM 触发中断源
-	// 	ENABLE  //使能
-	// 	);
-
-	// NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn;  //TIM4中断
-	// NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 3;  //先占优先级0级
-	// NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;  //从优先级3级
-	// NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //IRQ通道被使能
-	// NVIC_Init(&NVIC_InitStructure);  //根据NVIC_InitStruct中指定的参数初始化外设NVIC寄存器
-
-	// TIM_Cmd(TIM4, ENABLE);  //使能TIMx外设
-}
-
-void Timer4_disable(void) // TIM4失能
-{
-	// RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, DISABLE); //时钟失能
-	// TIM_ITConfig(TIM4, TIM_IT_Update | TIM_IT_Trigger,DISABLE );
-	// TIM_Cmd(TIM4, DISABLE);  //失能TIMx外设
-}
-///////////////////////////////////////////////////////////////////////////////////////////////
-// 定时器7初始化---功能：判断从机返回的数据是否接受完成
-
-void Timer7_Init(void)
-{
-	// TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-	// NVIC_InitTypeDef NVIC_InitStructure;
-
-	// RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE); //TIM7时钟使能
-
-	// //TIM7初始化设置
-	// TIM_TimeBaseStructure.TIM_Period = RS485_Frame_Distance*10; //设置在下一个更新事件装入活动的自动重装载寄存器周期的值
-	// TIM_TimeBaseStructure.TIM_Prescaler =7199; //设置用来作为TIMx时钟频率除数的预分频值 设置计数频率为10kHz
-	// TIM_TimeBaseStructure.TIM_ClockDivision = 0; //设置时钟分割:TDTS = Tck_tim
-	// TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;  //TIM向上计数模式
-	// TIM_TimeBaseInit(TIM7, &TIM_TimeBaseStructure); //根据TIM_TimeBaseInitStruct中指定的参数初始化TIMx的时间基数单位
-
-	// TIM_ITConfig( TIM7, TIM_IT_Update, ENABLE );//TIM7 允许更新中断
-
-	// //TIM7中断分组配置
-	// NVIC_InitStructure.NVIC_IRQChannel =TIM7_IRQn;  //TIM7中断
-	// NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;  //先占优先级2级
-	// NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;  //从优先级3级
-	// NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //IRQ通道被使能
-	// NVIC_Init(&NVIC_InitStructure);  //根据NVIC_InitStruct中指定的参数初始化外设NVIC寄存器
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
-// void USART2_IRQHandler(void)//串口2中断服务程序
-// {
-
-//         uint8_t res;
-//         uint8_t err;
-
-//         if(USART_GetITStatus(USART2,USART_IT_RXNE)!=RESET)
-//         {
-//                 if(USART_GetFlagStatus(USART2,USART_FLAG_NE|USART_FLAG_FE|USART_FLAG_PE)) {err=1;errpace=2;}//检测到噪音、帧错误或校验错误
-//                 else err=0;
-//                 res=USART_ReceiveData(USART2); //读接收到的字节，同时相关标志自动清除
-
-//                 if((RS485_RX_CNT<2047)&&(err==0))
-//                 {
-//                         RS485_RX_BUFF[RS485_RX_CNT]=res;
-//                         RS485_RX_CNT++;
-
-//                         TIM_ClearITPendingBit(TIM7,TIM_IT_Update);//清除定时器溢出中断
-//                         TIM_SetCounter(TIM7,0);//当接收到一个新的字节，将定时器7复位为0，重新计时（相当于喂狗）
-//                         TIM_Cmd(TIM7,ENABLE);//开始计时
-//                 }
-//         }
-// }
-// ////////////////////////////////////////////////////////////////////////////////////////////////////////
-// void TIM4_IRQHandler(void)   //TIM4中断
-// {
-// 	if (TIM_GetITStatus(TIM4,TIM_IT_Update) == SET) //检查指定的TIM中断发生与否:TIM 中断源
-// 	{
-// 		TIM_ClearITPendingBit(TIM4, TIM_IT_Update  );  //清除TIMx的中断待处理位:TIM 中断源 ;
-// 		modbus_rtu();
-
-// 	}
-// }
-
-///////////////////////////////////////////////////////////////////////////////////////
-
-// 用定时器7判断接收空闲时间,当空闲时间大于指定时间，认为一帧结束
-// 定时器7中断服务程序
-//  void TIM7_IRQHandler(void)
-//  {
-
-// 	if(TIM_GetITStatus(TIM7,TIM_IT_Update)!=RESET)
-// 	{
-// 		TIM_ClearITPendingBit(TIM7,TIM_IT_Update);//清除中断标志
-// 		TIM_Cmd(TIM7,DISABLE);//停止定时器
-// 		RS485_TX_EN=1;//停止接收，切换为发送状态
-// 		RS485_RxFlag=1;//置位帧结束标记
-// 		errpace=1;
-// 	}
-
-// }
 
 //////////////////////////////////////////////////////////////////////////////
 // 发送n个字节数据 主机将数据进行发送
@@ -301,23 +133,16 @@ void Timer7_Init(void)
 // len：发送的字节数
 void RS485_SendData(uint8_t *buff, uint8_t len)
 {
-	// RS485_TX_EN=1;//切换为发送模式
-	EN_485_TX_H;
+	EN_485_TX_H; // 切换为发送模式
 	while (len--)
 	{
 		// todo: 待修改
 		RS485_USART("%c", *(buff++));
 		// HAL_UART_Transmit(&huart2, (uint8_t *)(buff++), 1, 0xFF);
 		// while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) != SET);
-		// PC_USART("%d", *(buff++));
-		// RS485_USART("%02x", *(buff++));
-		// PC_USART("%02x", *(buff++));
-		// while(USART_GetFlagStatus(USART2,USART_FLAG_TXE)==RESET);//等待发送区为空
-		// USART_SendData(USART2,*(buff++));
 	}
-	// while(USART_GetFlagStatus(USART2,USART_FLAG_TC)==RESET);//等待发送完成
 	TX_RX_SET = 1; // 发送命令完成，定时器T4处理接收到的数据
-	EN_485_TX_L; // RS485_TX_EN=0;
+	EN_485_TX_L; // 切换为接收模式
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -359,18 +184,7 @@ void modbus_rtu(void)
 			}
 		}
 		break;
-	case 2: // 从机地址++
-		SlaverAddr++;
-		ValueOrLenth++;
-		if (SlaverAddr > 2)
-		{
-			SlaverAddr = 0x01;
-			ValueOrLenth = 0x01;
-		}
-		i = 0;
-		state = 3;
-		break;
-	case 3: // 功能码,这个是空余出来做报错以及其他处理的
+	default:
 		break;
 	}
 }
@@ -380,7 +194,6 @@ void modbus_rtu(void)
 void Master_03_Slove(uint8_t board_adr, uint16_t start_address, uint16_t lenth)
 {
 	uint16_t calCRC;
-	//	  uint8_t i;
 
 	RS485_TX_BUFF[0] = board_adr;
 	RS485_TX_BUFF[1] = READ_HLD_REG; // modbus 指令码03
@@ -392,14 +205,6 @@ void Master_03_Slove(uint8_t board_adr, uint16_t start_address, uint16_t lenth)
 	RS485_TX_BUFF[6] = (calCRC >> 8) & 0xFF;
 	RS485_TX_BUFF[7] = (calCRC)&0xFF;
 
-	//	  printf("\n");
-	//		   for(i=0;i<8;i++)		//循环发送数据
-	//	  {
-	//		  while(USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
-	//		  USART_SendData(USART1,RS485_TX_BUFF[i]);
-	//	  }
-	//	    while(USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
-	//
 	RS485_SendData(RS485_TX_BUFF, 8);
 }
 // Modbus功能码04处理程序/////////////////////////////////////////////////////////////////////////////////////// 未使用
@@ -465,7 +270,6 @@ void RS485_RX_Service(void)
 	uint16_t calCRC;
 	uint16_t recCRC;
 
-	//	  uint8_t i;
 	// osSignalWait(SENSOR_DATA_RECEIVED, osWaitForever);
 	if (RS485_RxFlag == 1)
 	{
@@ -474,14 +278,6 @@ void RS485_RX_Service(void)
 		{
 			if ((RS485_RX_BUFF[1] == 01) || (RS485_RX_BUFF[1] == 02) || (RS485_RX_BUFF[1] == 03) || (RS485_RX_BUFF[1] == 05) || (RS485_RX_BUFF[1] == 06) || (RS485_RX_BUFF[1] == 15) || (RS485_RX_BUFF[1] == 16)) // 功能码正确
 			{
-				//														 printf("\n");
-				//		                          for(i=0;i<9;i++)		//循环发送数据
-				//	                           {
-				//		                           while(USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
-				//		                           USART_SendData(USART1,RS485_RX_BUFF[i]);
-				//	                           }
-				//	                             while(USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
-
 				calCRC = CRC_Compute(RS485_RX_BUFF, RS485_RX_CNT - 2);																				 // 计算所接收数据的CRC
 				recCRC = RS485_RX_BUFF[RS485_RX_CNT - 1] | (((uint16_t)RS485_RX_BUFF[RS485_RX_CNT - 2]) << 8); // 接收到的CRC(低字节在前，高字节在后)
 
@@ -548,21 +344,18 @@ void RS485_RX_Service(void)
 
 		RS485_RxFlag = 0; // 复位帧结束标志
 		RS485_RX_CNT = 0; // 接收计数器清零
-		EN_485_TX_H;
-		//  RS485_TX_EN=1;//开启发送模式
+		EN_485_TX_H; //开启发送模式
 		TX_RX_SET = 0; // 命令完成
 	}
 }
 
-// Modbus功能码03处理程序///////////////////////////////////////////////////////////////////////////////////////已验证程序OK
+// Modbus功能码03处理程序
 // 读保持寄存器
 // 排除了寄存器的字节验证机制，采用默认的轮询周期清空缓存区
 void Modbus_03_Solve(void)
 {
-	// PC_USART("Parsing Data\r\n");
 	uint8_t i;
 	uint8_t RegNum;
-	// uint8_t mode;    //1为风速，2为风向。
 	RegNum = RS485_RX_BUFF[2] / 2; // 获取字节数 2个字节
 	uint16_t relativeAddr = StartAddr - 0x9C40;
 
@@ -574,29 +367,14 @@ void Modbus_03_Solve(void)
 			Master_ReadReg[relativeAddr + i] = RS485_RX_BUFF[3 + i * 2];																					 /////////高8位
 			Master_ReadReg[relativeAddr + i] = RS485_RX_BUFF[4 + i * 2] + (Master_ReadReg[relativeAddr + i] << 8); // 低8位+高8位
 		}
-		// PC_USART("high: %d, low: %d\n", Master_ReadReg[relativeAddr], Master_ReadReg[relativeAddr + 1]);
-		// PC_USART("high_0x: %0x, low_0x: %0x\n", Master_ReadReg[relativeAddr], Master_ReadReg[relativeAddr + 1]);
 		int32_t value_high = Master_ReadReg[relativeAddr];
 		int32_t value_low = Master_ReadReg[relativeAddr + 1];
-		// PC_USART("value: %d\n", (value_high << 16) + value_low);
 
 		uint32_t* sensorData = osPoolAlloc(SensorDataPHandle);
 
 		*sensorData = (value_high << 16) + value_low;
 
 		osMessagePut(SensorQHandle, (uint32_t)sensorData, osWaitForever);
-		// osMessagePut(SensorQHandle, (value_high << 16) + value_low, osWaitForever);
-		// PC_USART("\r\n");
-		//  mode=judge_wsorwx(SlaverAddr);
-
-		//  if(mode==1)
-		//  {
-		// 	ws=parsews(Master_ReadReg);
-		//  }
-		//  else if(mode==2)
-		//  {
-		//   parsewx(Master_ReadReg);
-		//  }
 
 		ComErr = 0;
 	}
@@ -674,74 +452,6 @@ void Modbus_16_Solve(void)
 	}
 	TX_RX_SET = 0; // 命令完成
 }
-
-// float parsews(uint16_t *buf)  //计算风速
-// {
-// 	int med;
-
-// 	med=(*buf)&0xff+(((*buf)>>8)&0xff)*256;      //中间值计算风速
-// 	ws=(float)med/10;                            //除以10为实际值
-
-// 	return ws;
-// }
-
-// void parsewx(uint16_t *buf)//判断风向角度
-// {
-// 	wx=(*buf)&0xff+(((*buf)>>8)&0xff)*256;           //计算风速
-
-// 	buf++;
-
-// 	angle=(*buf)&0xff+(((*buf)>>8)&0xff)*256;        //计算风向
-
-// }
-
-// void printfwx(int a)                             //显示风向
-// {
-
-// 	switch(a)
-// 	{
-// 		case 0:
-// 		     printf("风向：北风\r\n");
-// 				 break;
-// 	  case 1:
-// 			   printf("风向：东北风\r\n");
-// 			   break;
-// 		case 2:
-// 			   printf("风向：东风\r\n");
-// 				 break;
-// 		case 3:
-// 				 printf("风向：东南风\r\n");
-// 				 break;
-// 		case 4:
-// 		     printf("风向：南风\r\n");
-// 				 break;
-// 	  case 5:
-// 			   printf("风向：西南风\r\n");
-// 			   break;
-// 		case 6:
-// 			   printf("风向：西风\r\n");
-// 				 break;
-// 		case 7:
-// 				 printf("风向：西北风\r\n");
-// 				 break;
-
-// 	}
-
-// }
-
-// uint8_t judge_wsorwx(uint8_t SlaverAddr)      //判断风速or风向
-// {
-// 	switch(SlaverAddr)
-// 	{
-// 		case 0x01:
-// 				 return 1;
-// 				//  break;
-
-// 		case 0x02:
-// 			   return 2;
-// 		    //  break;
-// 	}
-// }
 
 uint16_t erroeback()
 {

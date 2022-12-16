@@ -48,7 +48,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-// * 调试信号�??
 extern uint8_t BLECommunicationFlag;
 extern uint8_t DataManagerFlag;
 
@@ -131,7 +130,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   //  __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
-  // * ???2????modbus??????
+  // ????mobus??????
   HAL_TIM_Base_Stop_IT(&htim2);
   /* USER CODE END 2 */
 
@@ -213,34 +212,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-  // todo: ??????????flag
   if (htim->Instance == TIM2)
   {
     EN_485_TX_H;
     RS485_RxFlag = 1;
     errpace = 1;
     __HAL_TIM_SET_COUNTER(htim,0);
-    HAL_TIM_Base_Stop_IT(htim); // * ???????????????????????????
-		// if (SensorCommunicationHandle == NULL)
-		// {
-		// 	PC_USART("ERROR!\n");
-		// }
-		// else
-		// 	osSignalSet(SensorCommunicationHandle, SENSOR_DATA_RECEIVED); //* ????????????????
-    // * BLE uasge
-    // PB02_Fram_Record_Struct.InfBit.FramFinishFlag = 1;
-    // PB02_Fram_Record_Struct.Data_RX_BUF[PB02_Fram_Record_Struct.InfBit.FramLength] = '\0';
-		// if (BLECommunicationHandle == NULL)
-		// {
-		// 	PC_USART("ERROR!\n");
-		// }
-		// else
-		// 	osSignalSet(BLECommunicationHandle, 0x0001);
-    // __HAL_TIM_SET_COUNTER(htim,0);
-    // HAL_TIM_Base_Stop_IT(htim);
-    // HAL_GPIO_TogglePin(PB02_LED_GPIO_Port, PB02_LED_Pin);
+    HAL_TIM_Base_Stop_IT(htim); // * ??????????????????
   }
-	// PC_USART("tim2!\n");
   /* USER CODE END Callback 1 */
 }
 

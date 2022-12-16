@@ -58,7 +58,7 @@ uint8_t buf[1] = {0};
 osPoolId SensorDataPHandle;
 
 struct Motor motor;									// 电机模型
-struct PIDController press_ctrl; // 压力控制器
+struct PIDController press_ctrl;    // 压力控制器
 
 /* USER CODE END Variables */
 osThreadId BLECommunicationHandle;
@@ -163,7 +163,7 @@ void MX_FREERTOS_Init(void)
 
 /* USER CODE BEGIN Header_BLECommunicationEntry */
 /**
- * @brief  Function implementing the BLECommunication thread.
+ * @brief  蓝牙通信任务，消息处理函数写下bletest.c中
  * @param  argument: Not used
  * @retval None
  */
@@ -195,7 +195,7 @@ void BLECommunicationEntry(void const *argument)
 
 /* USER CODE BEGIN Header_DataManagerEntry */
 /**
- * @brief Function implementing the DataManager thread.
+ * @brief 数据管理任务获取传感器压力数值，并提供给电机控制任务和手机任务
  * @param argument: Not used
  * @retval None
  */
@@ -204,10 +204,6 @@ void DataManagerEntry(void const *argument)
 {
   /* USER CODE BEGIN DataManagerEntry */
   /* Infinite loop */
-  // int i=0;
-
-  // HAL_UART_Receive_IT(&huart1, buf, 1);
-  // int gccinterval = 0;
   for (;;)
   {
     BLECommunicationFlag = 0;
@@ -220,7 +216,7 @@ void DataManagerEntry(void const *argument)
       // * 蓝牙消息发送思路，手机端添加指令，根据指令反馈消息
       osEvent ePhone;
       ePhone = osSignalWait(PHONE_DATA_REQUEST, 100);
-
+      // * 只有手机端发送数据请求指令了才返回压力数值
       if (ePhone.status == osEventSignal)
       {
         osMessagePut(BLEQHandle, *(uint32_t *)eSensorValue.value.p, osWaitForever);
@@ -230,7 +226,6 @@ void DataManagerEntry(void const *argument)
 
       osPoolFree(SensorDataPHandle, eSensorValue.value.p);
     }
-    // PC_USART("TODO: Data Managing!%d\n", i++);
     osDelay(900);
   }
   /* USER CODE END DataManagerEntry */
@@ -238,7 +233,7 @@ void DataManagerEntry(void const *argument)
 
 /* USER CODE BEGIN Header_SensorCommunicationEntry */
 /**
- * @brief 电机控制思路：0. 保证调速和正反转 1. 手机发送信号启停电机
+ * @brief 传感器modbus通信函数在master.c中实现
  * @param argument: Not used
  * @retval None
  */
@@ -250,7 +245,6 @@ void SensorCommunicationEntry(void const *argument)
   HAL_UART_Receive_IT(&huart2, buf, 1);
   for (;;)
   {
-    // PC_USART("TODO: Sensor\n");
     modbus_rtu();
 
     osDelay(1000);
@@ -260,7 +254,7 @@ void SensorCommunicationEntry(void const *argument)
 
 /* USER CODE BEGIN Header_MotorControlEntry */
 /**
- * @brief 电机控制思路：1. 读队列，获取当前压力数值 2. PID控制器 3. 读取手机端期望压力数值，提供一个改变期望压力数值的函数 4. 根据压力误差
+ * @brief 电机控制函数实现在motor.c文件中
  * @param argument: Not used
  * @retval None
  */
@@ -282,14 +276,6 @@ void MotorControlEntry(void const *argument)
       MS_Motor_Update();
     }
 
-    // evt = osSignalWait(MOTOR_STOP_REQUEST, osWaitForever);
-    // if (evt.status == osEventSignal)
-    // {
-    //   HAL_GPIO_WritePin(Motor_In1_GPIO_Port, Motor_In1_Pin, GPIO_PIN_RESET);
-    //   HAL_GPIO_WritePin(Motor_In2_GPIO_Port, Motor_In2_Pin, GPIO_PIN_RESET);
-    //   HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
-    //   __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
-    // }
     osEvent eMotorValue;
     eMotorValue = osMessageGet(MotorQHandle, osWaitForever);
     if (eMotorValue.status == osEventMessage)
@@ -298,7 +284,6 @@ void MotorControlEntry(void const *argument)
       PC_USART("Motor current press: %d\n", motor.c_Press);
       MS_Press_PID_Update();
     }
-    // osDelay(1000);
   }
   /* USER CODE END MotorControlEntry */
 }
@@ -309,27 +294,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // 串口接收中断回
 {
   if (huart->Instance == USART3) // 判断发生接收中断的串�????????
   {
-    // HAL_TIM_Base_Start_IT(&htim2);
-    // if (PB02_Fram_Record_Struct.InfBit.FramLength < RX_BUF_MAX_LEN - 1)
-    // {
-    //   PB02_Fram_Record_Struct.Data_RX_BUF[PB02_Fram_Record_Struct.InfBit.FramLength++] =
-    //       buf[0];
-    // }
-    // HAL_UART_Receive_IT(&huart3, buf, 1);
-    // // __HAL_UART_CLEAR_NEFLAG(&huart3);
-    // __HAL_TIM_SET_COUNTER(&htim2, 0);
   }
   if (huart->Instance == USART1) 
   {
-    // HAL_TIM_Base_Start_IT(&htim2);
-    // if (PB02_Fram_Record_Struct.InfBit.FramLength < RX_BUF_MAX_LEN - 1)
-    // {
-    //   PB02_Fram_Record_Struct.Data_RX_BUF[PB02_Fram_Record_Struct.InfBit.FramLength++] =
-    //       buf[0];
-    // }
-    // HAL_UART_Receive_IT(&huart1, buf, 1);
-    // // __HAL_UART_CLEAR_NEFLAG(&huart3);
-    // __HAL_TIM_SET_COUNTER(&htim2, 0);
   }
   if (huart->Instance == USART2)
   {
@@ -370,30 +337,15 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) // 串
 {
   if (huart->Instance == USART3)
   {
-    // 	PB02_Fram_Record_Struct.InfBit.FramFinishFlag=1;
-    // 	if (BLECommunicationHandle == NULL)
-    // 	{
-    // 		PC_USART("ERROR!\n");
-    // 	}
-    // 	else
-    // 		osSignalSet(BLECommunicationHandle, 0x0001);
-    // 	// HAL_UART_Receive_IT(&huart3, (uint8_t *)RxBuffer,LENGTH);
-    //  PB02_Fram_Record_Struct.Data_RX_BUF[Size] = '\0';
-    // 	HAL_UARTEx_ReceiveToIdle_IT(&huart3, (uint8_t*)PB02_Fram_Record_Struct.Data_RX_BUF, 1024);
-    // //  HAL_UARTEx_ReceiveToIdle_IT(&huart3, (uint8_t *)RxBuffer,LENGTH);
-    // 	//HAL_UART_Receive_IT(&huart3, (uint8_t *)RxBuffer,LENGTH);
-    // 	PB02_USART("receive:%d", Size);
-    //  //__HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
   }
 }
 
-//* 串口 overrun 处理
+//* 串口 overrun 处理, 进入overrun红色led灯状态会反转
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance == USART3)
   {
-    HAL_GPIO_WritePin(PB02_LED_GPIO_Port, PB02_LED_Pin, GPIO_PIN_SET);
-    // __HAL_UNLOCK(huart);
+    HAL_GPIO_TogglePin(PB02_LED_GPIO_Port, PB02_LED_Pin);
     __HAL_UART_CLEAR_OREFLAG(huart);
     HAL_UART_Receive(huart, buf, 1, 1);
   }
