@@ -126,11 +126,19 @@ void MS_Press_PID_Param_Reset()
 // PID 计算更新
 void MS_Press_PID_Update()
 {
+	if (motor.Status == MOTOR_STOP)
+		return;
+
+	if (motor.c_Press > motor.e_Press && motor.Status != MOTOR_BACKWARD)
+		MS_Motor_Direction(MOTOR_BACKWARD);
+	else if (motor.Status != MOTOR_FOREWARD)
+		MS_Motor_Direction(MOTOR_FOREWARD);
+
 	press_ctrl.l_Error = press_ctrl.c_Error; //* 保存上一次的误差
 	press_ctrl.c_Error = motor.e_Press - motor.c_Press;	//* 计算当前误差
 	press_ctrl.d_Error = (press_ctrl.c_Error - press_ctrl.l_Error);
 	// press_ctrl.d_Error = (press_ctrl.c_Error - press_ctrl.l_Error) / press_ctrl.d_Time; //* 计算误差的导数																							
-	
+
 	// 计算占空比
 	int16_t d_PWM = press_ctrl.Kp * press_ctrl.d_Error 
 						 		+ press_ctrl.Ki * press_ctrl.c_Error; 

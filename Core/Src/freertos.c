@@ -267,13 +267,15 @@ void MotorControlEntry(void const *argument)
   MS_Press_PID_Param_Reset();
   /* Infinite loop */
   PC_USART("Waiting for Start command!\n");
+  enum MotorStatus last_status = motor.Status;
   for (;;)
   {
     osEvent evt;
     evt = osSignalWait(PHONE_MOTOR_REQUEST, 100);
-    if (evt.status == osEventSignal)
+    if (evt.status == osEventSignal || motor.Status != last_status)
     {
       MS_Motor_Update();
+      last_status = motor.Status;
     }
 
     osEvent eMotorValue;

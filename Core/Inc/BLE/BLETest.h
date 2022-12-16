@@ -52,6 +52,14 @@ void bletest_led_off(void);
 // TODO: 可以选择发送一组压力数值
 void bletest_update(void);
 
+/// @brief 电机正转指令
+/// @param void
+void bletest_motor_forward(void);
+
+/// @brief 电机正转指令
+/// @param void
+void bletest_motor_backward(void);
+
 /// @brief 启动电机指令
 /// @param void
 void bletest_motor_start(void);

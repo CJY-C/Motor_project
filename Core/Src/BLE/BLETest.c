@@ -145,6 +145,42 @@ void bletest_update(void)
     PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
 }
 
+void bletest_motor_forward(void)
+{
+    if (MotorControlHandle == NULL)
+    {
+        PC_USART("ERROR: No MotorControlHandle!\n");
+    }
+    else
+    {
+        MS_Motor_Direction(MOTOR_FOREWARD);
+        osSignalSet(MotorControlHandle, PHONE_MOTOR_REQUEST);
+        // Msg respond_msg[RESPOND_PAIR_LEN] = {
+        //     {"d", String, NULL},
+        // };
+        // respond_msg[0].value.string = "motor forw";
+        // PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
+    }
+}
+
+void bletest_motor_backward(void)
+{
+    if (MotorControlHandle == NULL)
+    {
+        PC_USART("ERROR: No MotorControlHandle!\n");
+    }
+    else
+    {
+        MS_Motor_Direction(MOTOR_BACKWARD);
+        osSignalSet(MotorControlHandle, PHONE_MOTOR_REQUEST);
+        // Msg respond_msg[RESPOND_PAIR_LEN] = {
+        //     {"d", String, NULL},
+        // };
+        // respond_msg[0].value.string = "motor back";
+        // PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
+    }
+}
+
 void bletest_led_off(void)
 {
     Msg respond_msg[RESPOND_PAIR_LEN] = {
@@ -235,6 +271,10 @@ void bletest_motor_epress(uint16_t press)
         {"d", Number, NULL},
     };
     respond_msg[0].value.number = MS_Motor_Set_ePress(press);
+    // if (motor.c_press > motor.e_press)
+    //     bletest_motor_forward();
+    // else
+    //     bletest_motor_backward();
     PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
 }
 
