@@ -61,6 +61,11 @@ struct Motor motor;									// 电机模型
 uint8_t motor_en = 0;
 struct PIDController press_ctrl;    // 压力控制器
 
+extern uint8_t SlaverAddr;
+extern uint8_t Fuction;
+extern uint16_t StartAddr;
+extern uint16_t ValueOrLenth;
+
 /* USER CODE END Variables */
 osThreadId BLECommunicationHandle;
 osThreadId DataManagerHandle;
@@ -243,12 +248,14 @@ void SensorCommunicationEntry(void const *argument)
 {
   /* USER CODE BEGIN SensorCommunicationEntry */
   /* Infinite loop */
+  Modbus_RegMap();
   HAL_UART_Receive_IT(&huart2, buf, 1);
+
   for (;;)
   {
     modbus_rtu();
 
-    osDelay(1000);
+    osDelay(500);
   }
   /* USER CODE END SensorCommunicationEntry */
 }

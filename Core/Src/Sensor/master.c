@@ -5,7 +5,6 @@
 
 #include "cmsis_os.h"
 
-
 // TODO: ½ÓÊÕ»º³åÇø´óĞ¡µ÷Õû
 uint8_t RS485_RX_BUFF[2048] = {0}; // ½ÓÊÕ»º³åÇø2048×Ö½Ú
 uint16_t RS485_RX_CNT = 0;				 // ½ÓÊÕ¼ÆÊıÆ÷
@@ -26,7 +25,7 @@ uint16_t ValueOrLenth = 0x02; // Êı¾İor³¤¶È
 /// @brief ·¢ËÍ£¬½ÓÊÜÃüÁîÇĞ»»¡£ 0 ·¢ËÍÄ£Ê½ 1½ÓÊÜÄ£Ê½
 uint8_t TX_RX_SET = 0;
 
-/// @brief  0 ´ú±íÍ¨Ñ¶Õı³£ 1´ú±íCRC´íÎó 2´ú±í¹¦ÄÜÂë´íÎó ÏÖÔÚÄ¬ÈÏµÄÊÇ0x03 7ÎªÍ¨Ñ¶³¬Ê± 8´ú±íÎ´¿ªÊ¼
+/// @brief  0 ´ú±íÍ¨Ñ¶Õı³£ 1´ú±íCRC´íÎó 2´ú±í¹¦ÄÜÂë´íÎó ÏÖÔÚÄ¬ÈÏµÄÊÇ0x03 7ÎªÍ¨Ñ¶³¬Ê± 8´ú±íÎ´¿ªÊ¼ 100 ±íÊ¾ĞèÒªÇåÁã
 uint8_t ComErr = 8;
 
 /// @brief 1´ú±ítim7´®¿Ú´ı»úÊ±¼ä¹ı³¤£¬·ÅÆúÊı¾İÖ¡ 2¼ì²âµ½ÔëÒô¡¢Ö¡´íÎó»òĞ£Ñé´íÎó
@@ -37,7 +36,7 @@ uint8_t state = 0;
 
 //* ²Ù×÷ÏµÍ³Ïà¹Ø±äÁ¿
 extern osMessageQId SensorQHandle;
-extern osPoolId			SensorDataPHandle;
+extern osPoolId SensorDataPHandle;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Master¼Ä´æÆ÷ºÍµ¥Æ¬»ú¼Ä´æÆ÷µÄÓ³Éä¹ØÏµ,½ìÊ±ĞèÒªÔÚÖ÷º¯Êı½øĞĞµ÷ÓÃ»òÕßÏÔÊ¾
@@ -49,13 +48,15 @@ uint16_t Master_WriteReg[1000]; // Ğ´¼Ä´æÆ÷-------½«¼Ä´æÆ÷ÖĞµÄÊı¾İËÍ¸ø´Ó»ú   ¹¦Ä
 
 void Modbus_RegMap(void) // ¹¦ÄÜÂë0x06Ê¹ÓÃ
 {
-	Master_WriteReg[0] = 1;
-	Master_WriteReg[1] = 8;
+	Master_WriteReg[0] = 0;
+	Master_WriteReg[1] = 1;
 	Master_WriteReg[2] = 9;
 	Master_WriteReg[3] = 235;
 	Master_WriteReg[4] = 8690;
 	Master_WriteReg[5] = 23578;
 	Master_WriteReg[6] = 125;
+	Master_WriteReg[578] = 0;
+	Master_WriteReg[579] = 1;
 
 	Master_OutputIO[20] = 1;
 	Master_OutputIO[21] = 0;
@@ -74,7 +75,7 @@ void Modbus_RegMap(void) // ¹¦ÄÜÂë0x06Ê¹ÓÃ
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// CRCĞ£Ñé 
+// CRCĞ£Ñé
 
 const uint8_t auchCRCHi[] = {
 		0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
@@ -124,7 +125,7 @@ uint16_t CRC_Compute(uint8_t *puchMsg, uint16_t usDataLen)
 // ³õÊ¼»¯USART2
 void RS485_Init(void)
 {
-	EN_485_TX_L; 
+	EN_485_TX_L;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -134,21 +135,26 @@ void RS485_Init(void)
 void RS485_SendData(uint8_t *buff, uint8_t len)
 {
 	EN_485_TX_H; // ÇĞ»»Îª·¢ËÍÄ£Ê½
+	// PC_USART("send: ");
 	while (len--)
 	{
 		// todo: ´ıĞŞ¸Ä
-		RS485_USART("%c", *(buff++));
-		// HAL_UART_Transmit(&huart2, (uint8_t *)(buff++), 1, 0xFF);
-		// while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) != SET);
+		// PC_USART("%c", *(buff));
+		// RS485_USART("%c", *(buff++));
+		HAL_UART_Transmit(&huart2, (uint8_t *)(buff++), 1, 0xFF);
+		while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) != SET);
 	}
+	// PC_USART("\n");
+	while (len--)
 	TX_RX_SET = 1; // ·¢ËÍÃüÁîÍê³É£¬¶¨Ê±Æ÷T4´¦Àí½ÓÊÕµ½µÄÊı¾İ
-	EN_485_TX_L; // ÇĞ»»Îª½ÓÊÕÄ£Ê½
+	EN_485_TX_L;	 // ÇĞ»»Îª½ÓÊÕÄ£Ê½
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Í¨Ñ¶²ßÂÔ
 void modbus_rtu(void)
 {
+	void Set_To_Zero(void);
 	static uint8_t i = 0;
 	static uint8_t j = 0;
 	switch (i)
@@ -172,6 +178,10 @@ void modbus_rtu(void)
 		{
 			i = 0; // Íê³ÉÃüÁî¸ü»»¹¦ÄÜÂë£¡
 		}				 // Ò»´ÎÍ¨Ñ¶ÒÑ¾­Íê³É
+		else if (ComErr == 100) // ×Ô¶¯µ÷Áã
+		{
+			i = 3;
+		}
 		else		 // ´íÎó½ÓÊÕºóÔÙ´Î×¼±¸½ÓÊÕ
 		{
 			i = 1; //
@@ -184,9 +194,65 @@ void modbus_rtu(void)
 			}
 		}
 		break;
+	case 3: // µ÷Áã
+		Set_To_Zero();
+		i = 0;
+		break;
 	default:
 		break;
 	}
+}
+// Modbus¹¦ÄÜÂë16´¦Àí³ÌĞò///////////////////////////////////////////////////////////////////////////////////////
+// Ğ´¶à¸ö±£³Ö¼Ä´æÆ÷
+
+void Master_16_Slove(uint8_t board_adr, uint16_t start_address, uint16_t lenth) ///
+{
+	uint16_t calCRC;
+	uint8_t  i;
+	uint16_t relativeAddr = start_address - 0x3E8;
+	if ((relativeAddr + lenth) < 1000)
+	{
+		for (i = 0; i < lenth; i++)
+		{
+			RS485_TX_BUFF[7 + i * 2] = Master_WriteReg[relativeAddr + i] >> 8;
+			RS485_TX_BUFF[8 + i * 2] = Master_WriteReg[relativeAddr + i];
+		}
+	} //
+	RS485_TX_BUFF[0] = board_adr;
+	RS485_TX_BUFF[1] = WRITE_HLD_REG;
+	RS485_TX_BUFF[2] = HI(start_address);
+	RS485_TX_BUFF[3] = LOW(start_address);
+	RS485_TX_BUFF[4] = HI(lenth);
+	RS485_TX_BUFF[5] = LOW(lenth);
+	RS485_TX_BUFF[6] = 2 * lenth;
+	calCRC = CRC_Compute(RS485_TX_BUFF, 7 + 2 * lenth);
+	RS485_TX_BUFF[7 + 2 * lenth] = (calCRC >> 8) & 0xFF;
+	RS485_TX_BUFF[8 + 2 * lenth] = (calCRC)&0xFF;
+	RS485_SendData(RS485_TX_BUFF, 9 + 2 * lenth);
+}
+
+void Set_To_Zero(void)
+{
+  Fuction = WRITE_HLD_REG;
+  StartAddr = 0x62A;
+  int cnt = 0;
+  Master_Service( SlaverAddr, Fuction, StartAddr, ValueOrLenth);
+  while (ComErr != 0)
+  {
+    if (cnt > 2)
+    {
+      Master_Service( SlaverAddr, Fuction, StartAddr, ValueOrLenth);
+      cnt = 0;
+    }
+    osDelay(100);
+    RS485_RX_Service();
+    cnt++;
+    osDelay(500);
+  }
+  PC_USART("set to zero!\n");
+  Fuction = READ_HLD_REG;
+  StartAddr = 0x9C40;
+	ComErr = 0;
 }
 
 // Modbus¹¦ÄÜÂë03´¦Àí³ÌĞò///////////////////////////////////////////////////////////////////////////////////////
@@ -253,6 +319,8 @@ void Master_Service(uint8_t SlaverAddr, uint8_t Fuction, uint16_t StartAddr, uin
 		break;
 	case 06:
 		Master_06_Slove(SlaverAddr, StartAddr, ValueOrLenth);
+	case 16:
+		Master_16_Slove(SlaverAddr, StartAddr, ValueOrLenth);
 		break;
 	}
 }
@@ -308,7 +376,14 @@ void RS485_RX_Service(void)
 
 				else // CRCĞ£Ñé´íÎó
 				{
-					PC_USART("crc check incorrect!\r\n");
+					//* Á¬½ÓµçÄÔ²é¿´¾ßÌå´íÎóĞÅÏ¢
+					int c;
+					for (c = 0; c < RS485_RX_CNT; c++)
+					{
+						PC_USART("%0x ", RS485_RX_BUFF[c]);
+					}
+
+					PC_USART("\r\nor: %0x, check: %0x, crc check incorrect!\r\n", calCRC, recCRC);
 					ComErr = 14;
 				}
 			}
@@ -344,8 +419,8 @@ void RS485_RX_Service(void)
 
 		RS485_RxFlag = 0; // ¸´Î»Ö¡½áÊø±êÖ¾
 		RS485_RX_CNT = 0; // ½ÓÊÕ¼ÆÊıÆ÷ÇåÁã
-		EN_485_TX_H; //¿ªÆô·¢ËÍÄ£Ê½
-		TX_RX_SET = 0; // ÃüÁîÍê³É
+		EN_485_TX_H;			// ¿ªÆô·¢ËÍÄ£Ê½
+		TX_RX_SET = 0;		// ÃüÁîÍê³É
 	}
 }
 
@@ -363,20 +438,23 @@ void Modbus_03_Solve(void)
 	{
 		for (i = 0; i < RegNum; i++)
 		{
-			// * ¼ÆËã·½Ê½´ı¶¨
 			Master_ReadReg[relativeAddr + i] = RS485_RX_BUFF[3 + i * 2];																					 /////////¸ß8Î»
 			Master_ReadReg[relativeAddr + i] = RS485_RX_BUFF[4 + i * 2] + (Master_ReadReg[relativeAddr + i] << 8); // µÍ8Î»+¸ß8Î»
 		}
-		int32_t value_high = Master_ReadReg[relativeAddr];
-		int32_t value_low = Master_ReadReg[relativeAddr + 1];
+		uint32_t value_high = Master_ReadReg[relativeAddr];
+		uint32_t value_low = Master_ReadReg[relativeAddr + 1];
 
-		uint32_t* sensorData = osPoolAlloc(SensorDataPHandle);
+		// PC_USART("high: %0x, low: %0x", value_high, value_low);
+		int32_t *sensorData = osPoolAlloc(SensorDataPHandle);
 
 		*sensorData = (value_high << 16) + value_low;
 
 		osMessagePut(SensorQHandle, (uint32_t)sensorData, osWaitForever);
 
-		ComErr = 0;
+		if (*sensorData < 0)
+			ComErr = 100;
+		else
+			ComErr = 0;
 	}
 	else
 	{
@@ -442,6 +520,8 @@ void Modbus_16_Solve(void)
 {
 	uint16_t i;																											// Êı¾İ·µ»ØĞ£ÑéÓÃ
 	i = (((uint16_t)RS485_RX_BUFF[4]) << 8) | ((RS485_RX_BUFF[5])); // »ñÈ¡¼Ä´æÆ÷ÊıÁ¿
+
+		// PC_USART("number: %0x", i);
 	if (i == ValueOrLenth)
 	{
 		ComErr = 0;
