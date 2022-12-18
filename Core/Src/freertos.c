@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include "tim.h"
 #include "BLEConfig.h"
+#include "BLETest.h"
 #include "master.h"
 
 #include "motor.h"
@@ -65,6 +66,8 @@ extern uint8_t SlaverAddr;
 extern uint8_t Fuction;
 extern uint16_t StartAddr;
 extern uint16_t ValueOrLenth;
+
+extern uint16_t monitor;
 
 /* USER CODE END Variables */
 osThreadId BLECommunicationHandle;
@@ -223,9 +226,18 @@ void DataManagerEntry(void const *argument)
       osEvent ePhone;
       ePhone = osSignalWait(PHONE_DATA_REQUEST, 100);
       // * 只有手机端发送数据请求指令了才返回压力数值
-      if (ePhone.status == osEventSignal)
+      if (ePhone.status == osEventSignal || monitor)
       {
-        osMessagePut(BLEQHandle, *(uint32_t *)eSensorValue.value.p, osWaitForever);
+        if (monitor)
+        {
+          Msg respond_msg[RESPOND_PAIR_LEN] = {
+              {"d", Number, NULL},
+          };
+          respond_msg[0].value.number = (int32_t)*(uint32_t*)eSensorValue.value.p;
+          PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
+        }
+        else
+          osMessagePut(BLEQHandle, *(uint32_t *)eSensorValue.value.p, osWaitForever);
       }
 
       osMessagePut(MotorQHandle, *(uint32_t *)eSensorValue.value.p, osWaitForever);

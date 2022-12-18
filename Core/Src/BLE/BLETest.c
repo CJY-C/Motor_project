@@ -14,6 +14,10 @@ extern osMessageQId BLEQHandle;
 extern struct Motor motor;
 extern uint8_t motor_en;
 
+
+/// @brief 压力监控使能标志
+uint16_t monitor = 0;
+
 void msgProcess(void)
 {
     Msg receive_msg[RECEIVE_PAIR_LEN] = {
@@ -59,6 +63,9 @@ void msgProcess(void)
             case EPRESS:
                 bletest_motor_epress(receive_msg[VALUE_INDEX].value.number);
                 break;
+            case MONITOR:
+                bletest_press_monitor(receive_msg[VALUE_INDEX].value.number);
+                break;
             default:
                 bletest_unkonow_command();
                 break;
@@ -93,6 +100,8 @@ enum PC ble_CommandToEnum(char *phoneCommand)
         return SPDOWN;
     else if (!strcmp(phoneCommand, "epress"))
         return EPRESS;
+    else if (!strcmp(phoneCommand, "monitor"))
+        return MONITOR;
     return NONE;
 }
 
@@ -122,6 +131,22 @@ void bletest_led_on(void)
     LED_Pin_SetL;
     respond_msg[0].value.string = "Led on";
     PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
+}
+
+void Send_Press_value(void)
+{
+    osEvent eBLEValue;
+    eBLEValue = osMessageGet(BLEQHandle, osWaitForever);
+    if (eBLEValue.status == osEventMessage)
+    {
+        // PC_USART("BLE task read Queue: %d\n", (uint32_t)eBLEValue.value.v);
+    }
+    Msg respond_msg[RESPOND_PAIR_LEN] = {
+        {"d", Number, NULL},
+    };
+    respond_msg[0].value.number = (double)(int32_t)eBLEValue.value.v;
+    PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
+
 }
 
 void bletest_update(void)
@@ -253,6 +278,19 @@ void bletest_motor_epress(uint16_t press)
         bletest_motor_forward();
     else
         bletest_motor_backward();
+    PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
+}
+
+void bletest_press_monitor(uint8_t enable)
+{
+    Msg respond_msg[RESPOND_PAIR_LEN] = {
+        {"d", String, NULL},
+    };
+    monitor = enable;
+    if (monitor)
+        respond_msg[0].value.string = "monitor on";
+    else
+        respond_msg[0].value.string = "monitor off";
     PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
 }
 
