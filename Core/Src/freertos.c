@@ -55,12 +55,13 @@
 uint8_t BLECommunicationFlag = 0;
 uint8_t DataManagerFlag = 0;
 uint8_t buf[1] = {0};
+uint8_t buf2[1] = {0};
 
 osPoolId SensorDataPHandle;
 
 struct Motor motor;									// 电机模型
 uint8_t motor_en = 0;
-struct PIDController press_ctrl;    // 压力控制器
+struct PIDController press_ctrl;    // 压力控制�?
 
 extern uint8_t SlaverAddr;
 extern uint8_t Fuction;
@@ -83,15 +84,15 @@ osMessageQId MotorQHandle;
 
 /* USER CODE END FunctionPrototypes */
 
-void BLECommunicationEntry(void const *argument);
-void DataManagerEntry(void const *argument);
-void SensorCommunicationEntry(void const *argument);
-void MotorControlEntry(void const *argument);
+void BLECommunicationEntry(void const * argument);
+void DataManagerEntry(void const * argument);
+void SensorCommunicationEntry(void const * argument);
+void MotorControlEntry(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize);
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -107,12 +108,11 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackTyp
 /* USER CODE END GET_IDLE_TASK_MEMORY */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
-void MX_FREERTOS_Init(void)
-{
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -168,18 +168,20 @@ void MX_FREERTOS_Init(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
+
 }
 
 /* USER CODE BEGIN Header_BLECommunicationEntry */
 /**
- * @brief  蓝牙通信任务，消息处理函数写下bletest.c中
+ * @brief  蓝牙通信任务，消息处理函数写下bletest.c�?
  * @param  argument: Not used
  * @retval None
  */
 /* USER CODE END Header_BLECommunicationEntry */
-void BLECommunicationEntry(void const *argument)
+void BLECommunicationEntry(void const * argument)
 {
   /* USER CODE BEGIN BLECommunicationEntry */
+  HAL_UART_Receive_IT(&huart3, buf2, 1);
   PB02_Init();
   PB02_Set_Slave_Broadcast();
   /* Infinite loop */
@@ -204,12 +206,12 @@ void BLECommunicationEntry(void const *argument)
 
 /* USER CODE BEGIN Header_DataManagerEntry */
 /**
- * @brief 数据管理任务获取传感器压力数值，并提供给电机控制任务和手机任务
+ * @brief 数据管理任务获取传感器压力数值，并提供给电机控制任务和手机任�?
  * @param argument: Not used
  * @retval None
  */
 /* USER CODE END Header_DataManagerEntry */
-void DataManagerEntry(void const *argument)
+void DataManagerEntry(void const * argument)
 {
   /* USER CODE BEGIN DataManagerEntry */
   /* Infinite loop */
@@ -222,10 +224,10 @@ void DataManagerEntry(void const *argument)
     if (eSensorValue.status == osEventMessage)
     {
       // PC_USART("Data Manager task read Queue: %d\n", *(uint32_t *)eSensorValue.value.p);
-      // * 蓝牙消息发送思路，手机端添加指令，根据指令反馈消息
+      // * 蓝牙消息发�?��?�路，手机端添加指令，根据指令反馈消�?
       osEvent ePhone;
       ePhone = osSignalWait(PHONE_DATA_REQUEST, 100);
-      // * 只有手机端发送数据请求指令了才返回压力数值
+      // * 只有手机端发送数据请求指令了才返回压力数�?
       if (ePhone.status == osEventSignal || monitor)
       {
         if (monitor)
@@ -241,7 +243,11 @@ void DataManagerEntry(void const *argument)
       }
 
       osMessagePut(MotorQHandle, *(uint32_t *)eSensorValue.value.p, osWaitForever);
-
+      // Msg respond_msg[RESPOND_PAIR_LEN] = {
+      //     {"d", Number, NULL},
+      // };
+      // respond_msg[0].value.number = (int32_t)*(uint32_t*)eSensorValue.value.p;
+      // PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
       osPoolFree(SensorDataPHandle, eSensorValue.value.p);
     }
     osDelay(500);
@@ -251,12 +257,12 @@ void DataManagerEntry(void const *argument)
 
 /* USER CODE BEGIN Header_SensorCommunicationEntry */
 /**
- * @brief 传感器modbus通信函数在master.c中实现
+ * @brief 传感器modbus通信函数在master.c中实�?
  * @param argument: Not used
  * @retval None
  */
 /* USER CODE END Header_SensorCommunicationEntry */
-void SensorCommunicationEntry(void const *argument)
+void SensorCommunicationEntry(void const * argument)
 {
   /* USER CODE BEGIN SensorCommunicationEntry */
   /* Infinite loop */
@@ -274,12 +280,12 @@ void SensorCommunicationEntry(void const *argument)
 
 /* USER CODE BEGIN Header_MotorControlEntry */
 /**
- * @brief 电机控制函数实现在motor.c文件中
+ * @brief 电机控制函数实现在motor.c文件�?
  * @param argument: Not used
  * @retval None
  */
 /* USER CODE END Header_MotorControlEntry */
-void MotorControlEntry(void const *argument)
+void MotorControlEntry(void const * argument)
 {
   /* USER CODE BEGIN MotorControlEntry */
   MS_Motor_Init(1700, 100, 2000);
@@ -314,8 +320,17 @@ void MotorControlEntry(void const *argument)
 /* USER CODE BEGIN Application */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // 串口接收中断回调函数
 {
-  if (huart->Instance == USART3) // 判断发生接收中断的串�????????
+  if (huart->Instance == USART3) // 判断发生接收中断的串�?????????
   {
+    if (PB02_Fram_Record_Struct.InfBit.FramLength < RX_BUF_MAX_LEN - 1)
+    {
+      //* 读一个字节的数据
+      PB02_Fram_Record_Struct.Data_RX_BUF[PB02_Fram_Record_Struct.InfBit.FramLength++] = buf2[0];
+      __HAL_TIM_SET_COUNTER(&htim4, 0);
+      HAL_TIM_Base_Start_IT(&htim4);
+    }
+    __HAL_UART_CLEAR_NEFLAG(&huart3);
+    HAL_UART_Receive_IT(&huart3, buf2, 1);
   }
   if (huart->Instance == USART1) 
   {
@@ -327,7 +342,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // 串口接收中断回
     {
       err = 1;
       errpace = 2;
-    } // 检测到噪音、帧错误或校验错误
+    } // �?测到噪音、帧错误或校验错�?
     else
       err = 0;
 
@@ -339,12 +354,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // 串口接收中断回
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       HAL_TIM_Base_Start_IT(&htim2);
     }
-    __HAL_UART_CLEAR_NEFLAG(&huart3);
+    __HAL_UART_CLEAR_NEFLAG(&huart2);
     HAL_UART_Receive_IT(&huart2, buf, 1);
   }
 }
 
-//* 串口发送中断回调，未使用
+//* 串口发�?�中断回调，未使�?
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
   /* Prevent unused argument(s) compilation warning */
@@ -354,7 +369,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
    */
 }
 
-//* HAL库自带的空闲中断检测，没测试成功
+//* HAL库自带的空闲中断�?测，没测试成�?
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) // 串口接收中断回调函数
 {
   if (huart->Instance == USART3)
@@ -373,3 +388,4 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
   }
 }
 /* USER CODE END Application */
+

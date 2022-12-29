@@ -25,10 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <stdio.h>
 
-#include "BLEConfig.h"
-#include "master.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,15 +45,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-extern uint8_t BLECommunicationFlag;
-extern uint8_t DataManagerFlag;
 
-extern uint8_t huart_switch;
-extern osThreadId BLECommunicationHandle;
-extern osThreadId SensorCommunicationHandle;
-
-extern uint8_t errpace;
-extern uint8_t RS485_RxFlag;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,31 +58,6 @@ void MX_FREERTOS_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-/// @brief ???printf????????????
-/// @param ch 
-/// @param f 
-/// @return ch
-int fputc(int ch, FILE *f)
-{
-  switch (huart_switch)
-  {
-  case 3:
-    // HAL_UART_Transmit_IT(&huart3, (uint8_t*)&ch, 1);
-    HAL_UART_Transmit(&huart3, (uint8_t*)&ch, 1, 0xFF);
-    while(__HAL_UART_GET_FLAG(&huart3,UART_FLAG_TC) !=SET);
-    break;
-  case 2:
-    HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, 0xFF);
-    while(__HAL_UART_GET_FLAG(&huart2,UART_FLAG_TC) !=SET);
-    break;
-  default:
-  case 1:
-    HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, 0xFF);
-    while(__HAL_UART_GET_FLAG(&huart1,UART_FLAG_TC) !=SET);
-    break;
-  }
-	return ch;
-}
 /* USER CODE END 0 */
 
 /**
@@ -103,6 +67,7 @@ int fputc(int ch, FILE *f)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -128,12 +93,8 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
-  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-  //  __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
-  // ????mobus??????
-  HAL_TIM_Base_Stop_IT(&htim2);
-  HAL_TIM_Base_Stop_IT(&htim4);
+
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */
@@ -214,28 +175,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-  if (htim->Instance == TIM2)
-  {
-    EN_485_TX_H;
-    RS485_RxFlag = 1;
-    errpace = 1;
-    __HAL_TIM_SET_COUNTER(htim,0);
-    HAL_TIM_Base_Stop_IT(htim); // * ??????????????????
-  }
 
-  if (htim->Instance == TIM4)
-  {
-    PB02_Fram_Record_Struct.InfBit.FramFinishFlag = 1;
-    PB02_Fram_Record_Struct.Data_RX_BUF[PB02_Fram_Record_Struct.InfBit.FramLength] = '\0'; //* 添加字符串结�?
-    __HAL_TIM_SET_COUNTER(htim,0);
-    HAL_TIM_Base_Stop_IT(htim); 
-    if (BLECommunicationHandle == NULL)
-    {
-      PC_USART("ERROR!\n");
-    }
-    else
-      osSignalSet(BLECommunicationHandle, BLE_DATA_RECEIVED); //* �?测到总线空闲，就表示�?帧数据接收完�?
-  }
   /* USER CODE END Callback 1 */
 }
 
