@@ -12,6 +12,11 @@ extern osThreadId MotorControlHandle;
 extern osMessageQId BLEQHandle;
 
 extern struct Motor motor;
+extern uint8_t motor_en;
+
+
+/// @brief 压力监控使能标志
+uint16_t monitor = 0;
 
 void msgProcess(void)
 {
@@ -58,6 +63,9 @@ void msgProcess(void)
             case EPRESS:
                 bletest_motor_epress(receive_msg[VALUE_INDEX].value.number);
                 break;
+            case MONITOR:
+                bletest_press_monitor(receive_msg[VALUE_INDEX].value.number);
+                break;
             default:
                 bletest_unkonow_command();
                 break;
@@ -92,6 +100,8 @@ enum PC ble_CommandToEnum(char *phoneCommand)
         return SPDOWN;
     else if (!strcmp(phoneCommand, "epress"))
         return EPRESS;
+    else if (!strcmp(phoneCommand, "monitor"))
+        return MONITOR;
     return NONE;
 }
 
@@ -123,6 +133,22 @@ void bletest_led_on(void)
     PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
 }
 
+void Send_Press_value(void)
+{
+    osEvent eBLEValue;
+    eBLEValue = osMessageGet(BLEQHandle, osWaitForever);
+    if (eBLEValue.status == osEventMessage)
+    {
+        // PC_USART("BLE task read Queue: %d\n", (uint32_t)eBLEValue.value.v);
+    }
+    Msg respond_msg[RESPOND_PAIR_LEN] = {
+        {"d", Number, NULL},
+    };
+    respond_msg[0].value.number = (double)(int32_t)eBLEValue.value.v;
+    PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
+
+}
+
 void bletest_update(void)
 {
     if (DataManagerHandle == NULL)
@@ -143,6 +169,17 @@ void bletest_update(void)
     };
     respond_msg[0].value.number = (double)(int32_t)eBLEValue.value.v;
     PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
+}
+
+void bletest_motor_forward(void)
+{
+    MS_Motor_Direction(MOTOR_FOREWARD);
+
+}
+
+void bletest_motor_backward(void)
+{
+    MS_Motor_Direction(MOTOR_BACKWARD);
 }
 
 void bletest_led_off(void)
@@ -166,6 +203,7 @@ void bletest_motor_start(void)
         MS_Motor_Direction(MOTOR_FOREWARD);
         // motor.Status = MOTOR_FOREWARD;
         osSignalSet(MotorControlHandle, PHONE_MOTOR_REQUEST);
+        motor_en = 1;
         Msg respond_msg[RESPOND_PAIR_LEN] = {
             {"d", String, NULL},
         };
@@ -184,6 +222,7 @@ void bletest_motor_stop(void)
     {
         MS_Motor_Direction(MOTOR_STOP);
         // motor.Status = MOTOR_STOP;
+        motor_en = 0;
         osSignalSet(MotorControlHandle, PHONE_MOTOR_REQUEST);
         Msg respond_msg[RESPOND_PAIR_LEN] = {
             {"d", String, NULL},
@@ -235,6 +274,23 @@ void bletest_motor_epress(uint16_t press)
         {"d", Number, NULL},
     };
     respond_msg[0].value.number = MS_Motor_Set_ePress(press);
+    if (motor.c_Press < motor.e_Press)
+        bletest_motor_forward();
+    else
+        bletest_motor_backward();
+    PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
+}
+
+void bletest_press_monitor(uint8_t enable)
+{
+    Msg respond_msg[RESPOND_PAIR_LEN] = {
+        {"d", String, NULL},
+    };
+    monitor = enable;
+    if (monitor)
+        respond_msg[0].value.string = "monitor on";
+    else
+        respond_msg[0].value.string = "monitor off";
     PB02_USART("%s", ble_to_json(respond_msg, RESPOND_PAIR_LEN));
 }
 

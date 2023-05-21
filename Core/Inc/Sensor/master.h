@@ -47,12 +47,3 @@ uint16_t errpaceback(void);// 接收错误信息
 uint16_t stateback(void);//通讯情况测试
 
 #endif
-
-
-
-
-
-
-
-
-

@@ -61,6 +61,7 @@ extern osThreadId BLECommunicationHandle;
 
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim4;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
@@ -196,6 +197,20 @@ void TIM2_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles TIM4 global interrupt.
+  */
+void TIM4_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM4_IRQn 0 */
+
+  /* USER CODE END TIM4_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim4);
+  /* USER CODE BEGIN TIM4_IRQn 1 */
+
+  /* USER CODE END TIM4_IRQn 1 */
+}
+
+/**
   * @brief This function handles USART1 global interrupt.
   */
 void USART1_IRQHandler(void)
@@ -229,34 +244,34 @@ void USART2_IRQHandler(void)
 void USART3_IRQHandler(void)
 {
   /* USER CODE BEGIN USART3_IRQn 0 */
-  //XXX: 重新使用Cube生成代码后需要注释掉下面的中断处理函数
+  //XXX: 重新使用Cube生成代码后需要注释掉下面的中断处理函�?
   /* USER CODE END USART3_IRQn 0 */
-  // HAL_UART_IRQHandler(&huart3);
+  HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_IRQn 1 */
-  if (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_RXNE) == SET)
-  {
-    //XXX: IDLE中断无法在Keil仿真环境中检测到，只能上板调试！！！
-    __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
-    if (PB02_Fram_Record_Struct.InfBit.FramLength < RX_BUF_MAX_LEN - 1)
-    {
-      //* 读一个字节的数据
-      PB02_Fram_Record_Struct.Data_RX_BUF[PB02_Fram_Record_Struct.InfBit.FramLength++] =
-          huart3.Instance->DR & (uint8_t)0x00FF;
-    }
-    __HAL_UART_CLEAR_NEFLAG(&huart3);
-  }
-  if (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_IDLE) == SET)
-  {
-    __HAL_UART_CLEAR_IDLEFLAG(&huart3);
-    PB02_Fram_Record_Struct.InfBit.FramFinishFlag = 1;
-    PB02_Fram_Record_Struct.Data_RX_BUF[PB02_Fram_Record_Struct.InfBit.FramLength] = '\0'; //* 添加字符串结尾
-    if (BLECommunicationHandle == NULL)
-    {
-      PC_USART("ERROR!\n");
-    }
-    else
-      osSignalSet(BLECommunicationHandle, BLE_DATA_RECEIVED); //* 检测到总线空闲，就表示一帧数据接收完毕
-  }
+  // if (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_RXNE) == SET)
+  // {
+  //   //XXX: IDLE中断无法在Keil仿真环境中检测到，只能上板调试！！！
+  //   __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
+  //   if (PB02_Fram_Record_Struct.InfBit.FramLength < RX_BUF_MAX_LEN - 1)
+  //   {
+  //     //* 读一个字节的数据
+  //     PB02_Fram_Record_Struct.Data_RX_BUF[PB02_Fram_Record_Struct.InfBit.FramLength++] =
+  //         huart3.Instance->DR & (uint8_t)0x00FF;
+  //   }
+  //   __HAL_UART_CLEAR_NEFLAG(&huart3);
+  // }
+  // if (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_IDLE) == SET)
+  // {
+  //   __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+  //   PB02_Fram_Record_Struct.InfBit.FramFinishFlag = 1;
+  //   PB02_Fram_Record_Struct.Data_RX_BUF[PB02_Fram_Record_Struct.InfBit.FramLength] = '\0'; //* 添加字符串结�?
+  //   if (BLECommunicationHandle == NULL)
+  //   {
+  //     PC_USART("ERROR!\n");
+  //   }
+  //   else
+  //     osSignalSet(BLECommunicationHandle, BLE_DATA_RECEIVED); //* �?测到总线空闲，就表示�?帧数据接收完�?
+  // }
   /* USER CODE END USART3_IRQn 1 */
 }
 

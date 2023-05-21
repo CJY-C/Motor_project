@@ -5,57 +5,58 @@
 
 #include "cmsis_os.h"
 
+// TODO: æ¥æ”¶ç¼“å†²åŒºå¤§å°è°ƒæ•´
+uint8_t RS485_RX_BUFF[2048] = {0}; // æ¥æ”¶ç¼“å†²åŒº2048å­—èŠ‚
+uint16_t RS485_RX_CNT = 0;				 // æ¥æ”¶è®¡æ•°å™¨
+uint8_t RS485_RxFlag = 0;					 // æ¥æ”¶ä¸€å¸§ç»“æŸæ ‡è®°
 
-// TODO: ½ÓÊÕ»º³åÇø´óĞ¡µ÷Õû
-uint8_t RS485_RX_BUFF[2048] = {0}; // ½ÓÊÕ»º³åÇø2048×Ö½Ú
-uint16_t RS485_RX_CNT = 0;				 // ½ÓÊÕ¼ÆÊıÆ÷
-uint8_t RS485_RxFlag = 0;					 // ½ÓÊÕÒ»Ö¡½áÊø±ê¼Ç
-
-uint8_t RS485_TX_BUFF[2048]; // ·¢ËÍ»º³åÇø
-uint16_t RS485_TX_CNT = 0;	 // ·¢ËÍ¼ÆÊıÆ÷
+uint8_t RS485_TX_BUFF[2048]; // å‘é€ç¼“å†²åŒº
+uint16_t RS485_TX_CNT = 0;	 // å‘é€è®¡æ•°å™¨
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Ö÷»úÃüÁîÇø
-uint8_t SlaverAddr = 0x01;		// ´Ó»úµØÖ·
-uint8_t Fuction = 0x03;				// ¹¦ÄÜÂë
-uint16_t StartAddr = 0x9C40;	// ÆğÊ¼µØÖ·
-uint16_t ValueOrLenth = 0x02; // Êı¾İor³¤¶È
+// ä¸»æœºå‘½ä»¤åŒº
+uint8_t SlaverAddr = 0x01;		// ä»æœºåœ°å€
+uint8_t Fuction = 0x03;				// åŠŸèƒ½ç 
+uint16_t StartAddr = 0x9C40;	// èµ·å§‹åœ°å€
+uint16_t ValueOrLenth = 0x02; // æ•°æ®oré•¿åº¦
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-/// @brief ·¢ËÍ£¬½ÓÊÜÃüÁîÇĞ»»¡£ 0 ·¢ËÍÄ£Ê½ 1½ÓÊÜÄ£Ê½
+/// @brief å‘é€ï¼Œæ¥å—å‘½ä»¤åˆ‡æ¢ã€‚ 0 å‘é€æ¨¡å¼ 1æ¥å—æ¨¡å¼
 uint8_t TX_RX_SET = 0;
 
-/// @brief  0 ´ú±íÍ¨Ñ¶Õı³£ 1´ú±íCRC´íÎó 2´ú±í¹¦ÄÜÂë´íÎó ÏÖÔÚÄ¬ÈÏµÄÊÇ0x03 7ÎªÍ¨Ñ¶³¬Ê± 8´ú±íÎ´¿ªÊ¼
+/// @brief  0 ä»£è¡¨é€šè®¯æ­£å¸¸ 1ä»£è¡¨CRCé”™è¯¯ 2ä»£è¡¨åŠŸèƒ½ç é”™è¯¯ ç°åœ¨é»˜è®¤çš„æ˜¯0x03 7ä¸ºé€šè®¯è¶…æ—¶ 8ä»£è¡¨æœªå¼€å§‹ 100 è¡¨ç¤ºéœ€è¦æ¸…é›¶
 uint8_t ComErr = 8;
 
-/// @brief 1´ú±ítim7´®¿Ú´ı»úÊ±¼ä¹ı³¤£¬·ÅÆúÊı¾İÖ¡ 2¼ì²âµ½ÔëÒô¡¢Ö¡´íÎó»òĞ£Ñé´íÎó
+/// @brief 1ä»£è¡¨tim7ä¸²å£å¾…æœºæ—¶é—´è¿‡é•¿ï¼Œæ”¾å¼ƒæ•°æ®å¸§ 2æ£€æµ‹åˆ°å™ªéŸ³ã€å¸§é”™è¯¯æˆ–æ ¡éªŒé”™è¯¯
 uint8_t errpace = 0;
 
-/// @brief 1·¢ËÍ 2½ÓÊÕ ÏÂÒ»¸ö´Ó»úµØÖ·
+/// @brief 1å‘é€ 2æ¥æ”¶ ä¸‹ä¸€ä¸ªä»æœºåœ°å€
 uint8_t state = 0;
 
-//* ²Ù×÷ÏµÍ³Ïà¹Ø±äÁ¿
+//* æ“ä½œç³»ç»Ÿç›¸å…³å˜é‡
 extern osMessageQId SensorQHandle;
-extern osPoolId			SensorDataPHandle;
+extern osPoolId SensorDataPHandle;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Master¼Ä´æÆ÷ºÍµ¥Æ¬»ú¼Ä´æÆ÷µÄÓ³Éä¹ØÏµ,½ìÊ±ĞèÒªÔÚÖ÷º¯Êı½øĞĞµ÷ÓÃ»òÕßÏÔÊ¾
-uint16_t Master_InputIO[100];	 // ÊäÈë¿ª¹ØÁ¿¼Ä´æÆ÷(ÕâÀïÊ¹ÓÃµÄÊÇÎ»´ø²Ù×÷)   ×¢Òâ£º ÕâÀï´¢´æ´Ó»ú·µ»ØµÄÊı¾İ¡£    ¿ª¹ØÁ¿µÄÊı¾İÖ»ÄÜÊÇ0£¬1 ÀıÈç Master_InputIO[5]=0£»Master_InputIO[8]=1£»
-uint16_t Master_OutputIO[100]; // Êä³ö¿ª¹ØÁ¿¼Ä´æÆ÷(ÕâÀïÊ¹ÓÃµÄÊÇÎ»´ø²Ù×÷)    ¹¦ÄÜÂë 05 15
+// Masterå¯„å­˜å™¨å’Œå•ç‰‡æœºå¯„å­˜å™¨çš„æ˜ å°„å…³ç³»,å±Šæ—¶éœ€è¦åœ¨ä¸»å‡½æ•°è¿›è¡Œè°ƒç”¨æˆ–è€…æ˜¾ç¤º
+uint16_t Master_InputIO[100];	 // è¾“å…¥å¼€å…³é‡å¯„å­˜å™¨(è¿™é‡Œä½¿ç”¨çš„æ˜¯ä½å¸¦æ“ä½œ)   æ³¨æ„ï¼š è¿™é‡Œå‚¨å­˜ä»æœºè¿”å›çš„æ•°æ®ã€‚    å¼€å…³é‡çš„æ•°æ®åªèƒ½æ˜¯0ï¼Œ1 ä¾‹å¦‚ Master_InputIO[5]=0ï¼›Master_InputIO[8]=1ï¼›
+uint16_t Master_OutputIO[100]; // è¾“å‡ºå¼€å…³é‡å¯„å­˜å™¨(è¿™é‡Œä½¿ç”¨çš„æ˜¯ä½å¸¦æ“ä½œ)    åŠŸèƒ½ç  05 15
 
-uint16_t Master_ReadReg[1000];	// Ö»¶Á¼Ä´æÆ÷----´æ´¢´Ó»ú·µ»ØµÄÊı¾İ          ¹¦ÄÜÂë 03 Ä¿Ç°ÊÇÖ»ÓÃÕâÒ»¸ö
-uint16_t Master_WriteReg[1000]; // Ğ´¼Ä´æÆ÷-------½«¼Ä´æÆ÷ÖĞµÄÊı¾İËÍ¸ø´Ó»ú   ¹¦ÄÜÂë 06 16
+uint16_t Master_ReadReg[1000];	// åªè¯»å¯„å­˜å™¨----å­˜å‚¨ä»æœºè¿”å›çš„æ•°æ®          åŠŸèƒ½ç  03 ç›®å‰æ˜¯åªç”¨è¿™ä¸€ä¸ª
+uint16_t Master_WriteReg[1000]; // å†™å¯„å­˜å™¨-------å°†å¯„å­˜å™¨ä¸­çš„æ•°æ®é€ç»™ä»æœº   åŠŸèƒ½ç  06 16
 
-void Modbus_RegMap(void) // ¹¦ÄÜÂë0x06Ê¹ÓÃ
+void Modbus_RegMap(void) // åŠŸèƒ½ç 0x06ä½¿ç”¨
 {
-	Master_WriteReg[0] = 1;
-	Master_WriteReg[1] = 8;
+	Master_WriteReg[0] = 0;
+	Master_WriteReg[1] = 1;
 	Master_WriteReg[2] = 9;
 	Master_WriteReg[3] = 235;
 	Master_WriteReg[4] = 8690;
 	Master_WriteReg[5] = 23578;
 	Master_WriteReg[6] = 125;
+	Master_WriteReg[578] = 0;
+	Master_WriteReg[579] = 1;
 
 	Master_OutputIO[20] = 1;
 	Master_OutputIO[21] = 0;
@@ -74,7 +75,7 @@ void Modbus_RegMap(void) // ¹¦ÄÜÂë0x06Ê¹ÓÃ
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// CRCĞ£Ñé 
+// CRCæ ¡éªŒ
 
 const uint8_t auchCRCHi[] = {
 		0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
@@ -121,82 +122,147 @@ uint16_t CRC_Compute(uint8_t *puchMsg, uint16_t usDataLen)
 } // uint16 crc16(uint8 *puchMsg, uint16 usDataLen)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// ³õÊ¼»¯USART2
+// åˆå§‹åŒ–USART2
 void RS485_Init(void)
 {
-	EN_485_TX_L; 
+	EN_485_TX_L;
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// ·¢ËÍn¸ö×Ö½ÚÊı¾İ Ö÷»ú½«Êı¾İ½øĞĞ·¢ËÍ
-// buff:·¢ËÍÇøÊ×µØÖ·
-// len£º·¢ËÍµÄ×Ö½ÚÊı
+// å‘é€nä¸ªå­—èŠ‚æ•°æ® ä¸»æœºå°†æ•°æ®è¿›è¡Œå‘é€
+// buff:å‘é€åŒºé¦–åœ°å€
+// lenï¼šå‘é€çš„å­—èŠ‚æ•°
 void RS485_SendData(uint8_t *buff, uint8_t len)
 {
-	EN_485_TX_H; // ÇĞ»»Îª·¢ËÍÄ£Ê½
+	EN_485_TX_H; // åˆ‡æ¢ä¸ºå‘é€æ¨¡å¼
+	// PC_USART("send: ");
 	while (len--)
 	{
-		// todo: ´ıĞŞ¸Ä
-		RS485_USART("%c", *(buff++));
-		// HAL_UART_Transmit(&huart2, (uint8_t *)(buff++), 1, 0xFF);
-		// while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) != SET);
+		// todo: å¾…ä¿®æ”¹
+		// PC_USART("%c", *(buff));
+		// RS485_USART("%c", *(buff++));
+		HAL_UART_Transmit(&huart2, (uint8_t *)(buff++), 1, 0xFF);
+		while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) != SET);
 	}
-	TX_RX_SET = 1; // ·¢ËÍÃüÁîÍê³É£¬¶¨Ê±Æ÷T4´¦Àí½ÓÊÕµ½µÄÊı¾İ
-	EN_485_TX_L; // ÇĞ»»Îª½ÓÊÕÄ£Ê½
+	// PC_USART("\n");
+	while (len--)
+	TX_RX_SET = 1; // å‘é€å‘½ä»¤å®Œæˆï¼Œå®šæ—¶å™¨T4å¤„ç†æ¥æ”¶åˆ°çš„æ•°æ®
+	EN_485_TX_L;	 // åˆ‡æ¢ä¸ºæ¥æ”¶æ¨¡å¼
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Í¨Ñ¶²ßÂÔ
+// é€šè®¯ç­–ç•¥
 void modbus_rtu(void)
 {
+	void Set_To_Zero(void);
 	static uint8_t i = 0;
 	static uint8_t j = 0;
 	switch (i)
 	{
-	case 0: // modbusÖ´ĞĞÃüÁîµÚÒ»²½¡£
-		// RS485_TX_Service();  //Ïò´Ó»ú·¢ËÍÒ»¸öÇëÇó¡£¾ÍÔÚ´ËÊ±·¢ËÍÍê³ÉTX_RX_SET=1 ·¢ËÍÃüÁîÍê³É£¬¶¨Ê±Æ÷T4´¦Àí½ÓÊÕµ½µÄÊı¾İ
-		// ÔÚ´Ë´¦Ò²¿ÉÒÔÖ±½ÓĞ´Master_Service( SlaverAddr, Fuction, StartAddr, ValueOrLenth);
-		// ¶à´ÎÍ¨Ñ¶½á¹û¿ÉÒÔ°´ÕÕÀàËÆµÄ·â×°½øĞĞÌîĞ´
+	case 0: // modbusæ‰§è¡Œå‘½ä»¤ç¬¬ä¸€æ­¥ã€‚
+		// RS485_TX_Service();  //å‘ä»æœºå‘é€ä¸€ä¸ªè¯·æ±‚ã€‚å°±åœ¨æ­¤æ—¶å‘é€å®ŒæˆTX_RX_SET=1 å‘é€å‘½ä»¤å®Œæˆï¼Œå®šæ—¶å™¨T4å¤„ç†æ¥æ”¶åˆ°çš„æ•°æ®
+		// åœ¨æ­¤å¤„ä¹Ÿå¯ä»¥ç›´æ¥å†™Master_Service( SlaverAddr, Fuction, StartAddr, ValueOrLenth);
+		// å¤šæ¬¡é€šè®¯ç»“æœå¯ä»¥æŒ‰ç…§ç±»ä¼¼çš„å°è£…è¿›è¡Œå¡«å†™
 
 		RS485_TX_Service();
 		if (TX_RX_SET)
-			i = 1; // ·¢ËÍ£¬½ÓÊÜÃüÁîÇĞ»»¡£ 0 ·¢ËÍÄ£Ê½ 1 ½ÓÊÜÄ£Ê½
-		// if(TX_RX_SET) i=1; //·¢ËÍ£¬½ÓÊÜÃüÁîÇĞ»»¡£ 0 ·¢ËÍÄ£Ê½ 1 ½ÓÊÜÄ£Ê½
+			i = 1; // å‘é€ï¼Œæ¥å—å‘½ä»¤åˆ‡æ¢ã€‚ 0 å‘é€æ¨¡å¼ 1 æ¥å—æ¨¡å¼
+		// if(TX_RX_SET) i=1; //å‘é€ï¼Œæ¥å—å‘½ä»¤åˆ‡æ¢ã€‚ 0 å‘é€æ¨¡å¼ 1 æ¥å—æ¨¡å¼
 
 		state = 1;
 		break;
-	case 1:								// modbusÃüÁîÖ´ĞĞµÚ¶ş²½¡£
-		RS485_RX_Service(); // Ö´ĞĞÊı¾İ½ÓÊÕ
+	case 1:								// modbuså‘½ä»¤æ‰§è¡Œç¬¬äºŒæ­¥ã€‚
+		RS485_RX_Service(); // æ‰§è¡Œæ•°æ®æ¥æ”¶
 		state = 2;
-		if (ComErr == 0) // Èç¹ûÊ²Ã´´íÎó¶¼Ã»ÓĞ·¢Éú
+		if (ComErr == 0) // å¦‚æœä»€ä¹ˆé”™è¯¯éƒ½æ²¡æœ‰å‘ç”Ÿ
 		{
-			i = 0; // Íê³ÉÃüÁî¸ü»»¹¦ÄÜÂë£¡
-		}				 // Ò»´ÎÍ¨Ñ¶ÒÑ¾­Íê³É
-		else		 // ´íÎó½ÓÊÕºóÔÙ´Î×¼±¸½ÓÊÕ
+			i = 0; // å®Œæˆå‘½ä»¤æ›´æ¢åŠŸèƒ½ç ï¼
+		}				 // ä¸€æ¬¡é€šè®¯å·²ç»å®Œæˆ
+		else if (ComErr == 100) // è‡ªåŠ¨è°ƒé›¶
+		{
+			i = 3;
+		}
+		else		 // é”™è¯¯æ¥æ”¶åå†æ¬¡å‡†å¤‡æ¥æ”¶
 		{
 			i = 1; //
-			j++;	 // Ò»¸öÃüÁî·¢ËÍ3´ÎÃ»ÓĞÓ¦´ğÇĞ»»ÏÂÒ»¸öÃüÁî
+			j++;	 // ä¸€ä¸ªå‘½ä»¤å‘é€3æ¬¡æ²¡æœ‰åº”ç­”åˆ‡æ¢ä¸‹ä¸€ä¸ªå‘½ä»¤
 			if (j >= 2)
 			{
 				j = 0;
 				i = 0;
-				ComErr = 7; // Í¨Ñ¶³¬Ê±
+				ComErr = 7; // é€šè®¯è¶…æ—¶
 			}
 		}
+		break;
+	case 3: // è°ƒé›¶
+		Set_To_Zero();
+		i = 0;
 		break;
 	default:
 		break;
 	}
 }
+// ModbusåŠŸèƒ½ç 16å¤„ç†ç¨‹åº///////////////////////////////////////////////////////////////////////////////////////
+// å†™å¤šä¸ªä¿æŒå¯„å­˜å™¨
 
-// Modbus¹¦ÄÜÂë03´¦Àí³ÌĞò///////////////////////////////////////////////////////////////////////////////////////
-// ¶Á±£³Ö¼Ä´æÆ÷
+void Master_16_Slove(uint8_t board_adr, uint16_t start_address, uint16_t lenth) ///
+{
+	uint16_t calCRC;
+	uint8_t  i;
+	uint16_t relativeAddr = start_address - 0x3E8;
+	if ((relativeAddr + lenth) < 1000)
+	{
+		for (i = 0; i < lenth; i++)
+		{
+			RS485_TX_BUFF[7 + i * 2] = Master_WriteReg[relativeAddr + i] >> 8;
+			RS485_TX_BUFF[8 + i * 2] = Master_WriteReg[relativeAddr + i];
+		}
+	} //
+	RS485_TX_BUFF[0] = board_adr;
+	RS485_TX_BUFF[1] = WRITE_HLD_REG;
+	RS485_TX_BUFF[2] = HI(start_address);
+	RS485_TX_BUFF[3] = LOW(start_address);
+	RS485_TX_BUFF[4] = HI(lenth);
+	RS485_TX_BUFF[5] = LOW(lenth);
+	RS485_TX_BUFF[6] = 2 * lenth;
+	calCRC = CRC_Compute(RS485_TX_BUFF, 7 + 2 * lenth);
+	RS485_TX_BUFF[7 + 2 * lenth] = (calCRC >> 8) & 0xFF;
+	RS485_TX_BUFF[8 + 2 * lenth] = (calCRC)&0xFF;
+	RS485_SendData(RS485_TX_BUFF, 9 + 2 * lenth);
+}
+
+void Set_To_Zero(void)
+{
+  Fuction = WRITE_HLD_REG;
+  StartAddr = 0x62A;
+  int cnt = 0;
+  Master_Service( SlaverAddr, Fuction, StartAddr, ValueOrLenth);
+  while (ComErr != 0)
+  {
+    if (cnt > 2)
+    {
+      Master_Service( SlaverAddr, Fuction, StartAddr, ValueOrLenth);
+      cnt = 0;
+    }
+    osDelay(100);
+    RS485_RX_Service();
+    cnt++;
+    osDelay(500);
+  }
+  PC_USART("set to zero!\n");
+  Fuction = READ_HLD_REG;
+  StartAddr = 0x9C40;
+	ComErr = 0;
+}
+
+// ModbusåŠŸèƒ½ç 03å¤„ç†ç¨‹åº///////////////////////////////////////////////////////////////////////////////////////
+// è¯»ä¿æŒå¯„å­˜å™¨
 void Master_03_Slove(uint8_t board_adr, uint16_t start_address, uint16_t lenth)
 {
 	uint16_t calCRC;
 
 	RS485_TX_BUFF[0] = board_adr;
-	RS485_TX_BUFF[1] = READ_HLD_REG; // modbus Ö¸ÁîÂë03
+	RS485_TX_BUFF[1] = READ_HLD_REG; // modbus æŒ‡ä»¤ç 03
 	RS485_TX_BUFF[2] = HI(start_address);
 	RS485_TX_BUFF[3] = LOW(start_address);
 	RS485_TX_BUFF[4] = HI(lenth);
@@ -207,13 +273,13 @@ void Master_03_Slove(uint8_t board_adr, uint16_t start_address, uint16_t lenth)
 
 	RS485_SendData(RS485_TX_BUFF, 8);
 }
-// Modbus¹¦ÄÜÂë04´¦Àí³ÌĞò/////////////////////////////////////////////////////////////////////////////////////// Î´Ê¹ÓÃ
-// ¶ÁÊäÈë¼Ä´æÆ÷
+// ModbusåŠŸèƒ½ç 04å¤„ç†ç¨‹åº/////////////////////////////////////////////////////////////////////////////////////// æœªä½¿ç”¨
+// è¯»è¾“å…¥å¯„å­˜å™¨
 void Master_04_Slove(uint8_t board_adr, uint16_t start_address, uint16_t lenth)
 {
 	uint16_t calCRC;
 	RS485_TX_BUFF[0] = board_adr;
-	RS485_TX_BUFF[1] = READ_AI; // modbus Ö¸ÁîÂë04
+	RS485_TX_BUFF[1] = READ_AI; // modbus æŒ‡ä»¤ç 04
 	RS485_TX_BUFF[2] = HI(start_address);
 	RS485_TX_BUFF[3] = LOW(start_address);
 	RS485_TX_BUFF[4] = HI(lenth);
@@ -224,15 +290,15 @@ void Master_04_Slove(uint8_t board_adr, uint16_t start_address, uint16_t lenth)
 	RS485_SendData(RS485_TX_BUFF, 8);
 }
 
-// Modbus¹¦ÄÜÂë06´¦Àí³ÌĞò   //////////////////////////////////////////////////////////////////////////////////
-// Ğ´µ¥¸ö±£³Ö¼Ä´æÆ÷
+// ModbusåŠŸèƒ½ç 06å¤„ç†ç¨‹åº   //////////////////////////////////////////////////////////////////////////////////
+// å†™å•ä¸ªä¿æŒå¯„å­˜å™¨
 void Master_06_Slove(uint8_t board_adr, uint16_t start_address, uint16_t value)
 {
 	uint16_t calCRC;
 	if (value == 1)
 	{
 		RS485_TX_BUFF[0] = board_adr;
-		RS485_TX_BUFF[1] = SET_HLD_REG; // modbus Ö¸ÁîÂë06
+		RS485_TX_BUFF[1] = SET_HLD_REG; // modbus æŒ‡ä»¤ç 06
 		RS485_TX_BUFF[2] = HI(start_address);
 		RS485_TX_BUFF[3] = LOW(start_address);
 		RS485_TX_BUFF[4] = HI(Master_WriteReg[start_address]);
@@ -253,6 +319,8 @@ void Master_Service(uint8_t SlaverAddr, uint8_t Fuction, uint16_t StartAddr, uin
 		break;
 	case 06:
 		Master_06_Slove(SlaverAddr, StartAddr, ValueOrLenth);
+	case 16:
+		Master_16_Slove(SlaverAddr, StartAddr, ValueOrLenth);
 		break;
 	}
 }
@@ -263,7 +331,7 @@ void RS485_TX_Service(void)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-// RS485·şÎñ³ÌĞò£¬ÓÃÓÚ´¦Àí½ÓÊÕµ½µÄÊı¾İ(ÇëÔÚÖ÷º¯ÊıÖĞÑ­»·µ÷ÓÃ)
+// RS485æœåŠ¡ç¨‹åºï¼Œç”¨äºå¤„ç†æ¥æ”¶åˆ°çš„æ•°æ®(è¯·åœ¨ä¸»å‡½æ•°ä¸­å¾ªç¯è°ƒç”¨)
 
 void RS485_RX_Service(void)
 {
@@ -274,19 +342,19 @@ void RS485_RX_Service(void)
 	if (RS485_RxFlag == 1)
 	{
 		// PC_USART("enter rx service!\r\n");
-		if (RS485_RX_BUFF[0] == SlaverAddr) // µØÖ·ÕıÈ·
+		if (RS485_RX_BUFF[0] == SlaverAddr) // åœ°å€æ­£ç¡®
 		{
-			if ((RS485_RX_BUFF[1] == 01) || (RS485_RX_BUFF[1] == 02) || (RS485_RX_BUFF[1] == 03) || (RS485_RX_BUFF[1] == 05) || (RS485_RX_BUFF[1] == 06) || (RS485_RX_BUFF[1] == 15) || (RS485_RX_BUFF[1] == 16)) // ¹¦ÄÜÂëÕıÈ·
+			if ((RS485_RX_BUFF[1] == 01) || (RS485_RX_BUFF[1] == 02) || (RS485_RX_BUFF[1] == 03) || (RS485_RX_BUFF[1] == 05) || (RS485_RX_BUFF[1] == 06) || (RS485_RX_BUFF[1] == 15) || (RS485_RX_BUFF[1] == 16)) // åŠŸèƒ½ç æ­£ç¡®
 			{
-				calCRC = CRC_Compute(RS485_RX_BUFF, RS485_RX_CNT - 2);																				 // ¼ÆËãËù½ÓÊÕÊı¾İµÄCRC
-				recCRC = RS485_RX_BUFF[RS485_RX_CNT - 1] | (((uint16_t)RS485_RX_BUFF[RS485_RX_CNT - 2]) << 8); // ½ÓÊÕµ½µÄCRC(µÍ×Ö½ÚÔÚÇ°£¬¸ß×Ö½ÚÔÚºó)
+				calCRC = CRC_Compute(RS485_RX_BUFF, RS485_RX_CNT - 2);																				 // è®¡ç®—æ‰€æ¥æ”¶æ•°æ®çš„CRC
+				recCRC = RS485_RX_BUFF[RS485_RX_CNT - 1] | (((uint16_t)RS485_RX_BUFF[RS485_RX_CNT - 2]) << 8); // æ¥æ”¶åˆ°çš„CRC(ä½å­—èŠ‚åœ¨å‰ï¼Œé«˜å­—èŠ‚åœ¨å)
 
-				if (calCRC == recCRC) // CRCĞ£ÑéÕıÈ·
+				if (calCRC == recCRC) // CRCæ ¡éªŒæ­£ç¡®
 				{
 					/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-					switch (RS485_RX_BUFF[1]) // ¸ù¾İ²»Í¬µÄ¹¦ÄÜÂë½øĞĞ´¦Àí
+					switch (RS485_RX_BUFF[1]) // æ ¹æ®ä¸åŒçš„åŠŸèƒ½ç è¿›è¡Œå¤„ç†
 					{
-					case 03: // ¶Áµ¥¸ö¼Ä´æÆ÷£¬ÏÖÔÚÄ¿Ç°Ö»ÓÃÕâÒ»¸öÏÈ£¬Ö»ÄÜ¶ÁÒ»¸ö¡£
+					case 03: // è¯»å•ä¸ªå¯„å­˜å™¨ï¼Œç°åœ¨ç›®å‰åªç”¨è¿™ä¸€ä¸ªå…ˆï¼Œåªèƒ½è¯»ä¸€ä¸ªã€‚
 					{
 						Modbus_03_Solve();
 						break;
@@ -306,14 +374,21 @@ void RS485_RX_Service(void)
 					}
 				}
 
-				else // CRCĞ£Ñé´íÎó
+				else // CRCæ ¡éªŒé”™è¯¯
 				{
-					PC_USART("crc check incorrect!\r\n");
+					//* è¿æ¥ç”µè„‘æŸ¥çœ‹å…·ä½“é”™è¯¯ä¿¡æ¯
+					int c;
+					for (c = 0; c < RS485_RX_CNT; c++)
+					{
+						PC_USART("%0x ", RS485_RX_BUFF[c]);
+					}
+
+					PC_USART("\r\nor: %0x, check: %0x, crc check incorrect!\r\n", calCRC, recCRC);
 					ComErr = 14;
 				}
 			}
 
-			else // ¹¦ÄÜÂë´íÎó
+			else // åŠŸèƒ½ç é”™è¯¯
 			{
 				PC_USART("function code incorrect!\r\n");
 				if ((RS485_RX_BUFF[1] == 0x81) || (RS485_RX_BUFF[1] == 0x82) || (RS485_RX_BUFF[1] == 0x83) || (RS485_RX_BUFF[1] == 0x85) || (RS485_RX_BUFF[1] == 0x86) || (RS485_RX_BUFF[1] == 0x8F) || (RS485_RX_BUFF[1] == 0x90))
@@ -333,7 +408,7 @@ void RS485_RX_Service(void)
 						ComErr = 14;
 						break;
 					}
-					TX_RX_SET = 0; // ÃüÁîÍê³É
+					TX_RX_SET = 0; // å‘½ä»¤å®Œæˆ
 				}
 			}
 		}
@@ -342,52 +417,55 @@ void RS485_RX_Service(void)
 			PC_USART("slave addr incorrect!\r\n");
 		}
 
-		RS485_RxFlag = 0; // ¸´Î»Ö¡½áÊø±êÖ¾
-		RS485_RX_CNT = 0; // ½ÓÊÕ¼ÆÊıÆ÷ÇåÁã
-		EN_485_TX_H; //¿ªÆô·¢ËÍÄ£Ê½
-		TX_RX_SET = 0; // ÃüÁîÍê³É
+		RS485_RxFlag = 0; // å¤ä½å¸§ç»“æŸæ ‡å¿—
+		RS485_RX_CNT = 0; // æ¥æ”¶è®¡æ•°å™¨æ¸…é›¶
+		EN_485_TX_H;			// å¼€å¯å‘é€æ¨¡å¼
+		TX_RX_SET = 0;		// å‘½ä»¤å®Œæˆ
 	}
 }
 
-// Modbus¹¦ÄÜÂë03´¦Àí³ÌĞò
-// ¶Á±£³Ö¼Ä´æÆ÷
-// ÅÅ³ıÁË¼Ä´æÆ÷µÄ×Ö½ÚÑéÖ¤»úÖÆ£¬²ÉÓÃÄ¬ÈÏµÄÂÖÑ¯ÖÜÆÚÇå¿Õ»º´æÇø
+// ModbusåŠŸèƒ½ç 03å¤„ç†ç¨‹åº
+// è¯»ä¿æŒå¯„å­˜å™¨
+// æ’é™¤äº†å¯„å­˜å™¨çš„å­—èŠ‚éªŒè¯æœºåˆ¶ï¼Œé‡‡ç”¨é»˜è®¤çš„è½®è¯¢å‘¨æœŸæ¸…ç©ºç¼“å­˜åŒº
 void Modbus_03_Solve(void)
 {
 	uint8_t i;
 	uint8_t RegNum;
-	RegNum = RS485_RX_BUFF[2] / 2; // »ñÈ¡×Ö½ÚÊı 2¸ö×Ö½Ú
+	RegNum = RS485_RX_BUFF[2] / 2; // è·å–å­—èŠ‚æ•° 2ä¸ªå­—èŠ‚
 	uint16_t relativeAddr = StartAddr - 0x9C40;
 
-	if ((relativeAddr + RegNum) < 1000) // ¼Ä´æÆ÷µØÖ·+ÊıÁ¿ÔÚ·¶Î§ÄÚ
+	if ((relativeAddr + RegNum) < 1000) // å¯„å­˜å™¨åœ°å€+æ•°é‡åœ¨èŒƒå›´å†…
 	{
 		for (i = 0; i < RegNum; i++)
 		{
-			// * ¼ÆËã·½Ê½´ı¶¨
-			Master_ReadReg[relativeAddr + i] = RS485_RX_BUFF[3 + i * 2];																					 /////////¸ß8Î»
-			Master_ReadReg[relativeAddr + i] = RS485_RX_BUFF[4 + i * 2] + (Master_ReadReg[relativeAddr + i] << 8); // µÍ8Î»+¸ß8Î»
+			Master_ReadReg[relativeAddr + i] = RS485_RX_BUFF[3 + i * 2];																					 /////////é«˜8ä½
+			Master_ReadReg[relativeAddr + i] = RS485_RX_BUFF[4 + i * 2] + (Master_ReadReg[relativeAddr + i] << 8); // ä½8ä½+é«˜8ä½
 		}
-		int32_t value_high = Master_ReadReg[relativeAddr];
-		int32_t value_low = Master_ReadReg[relativeAddr + 1];
+		uint32_t value_high = Master_ReadReg[relativeAddr];
+		uint32_t value_low = Master_ReadReg[relativeAddr + 1];
 
-		uint32_t* sensorData = osPoolAlloc(SensorDataPHandle);
+		// PC_USART("high: %0x, low: %0x", value_high, value_low);
+		int32_t *sensorData = osPoolAlloc(SensorDataPHandle);
 
 		*sensorData = (value_high << 16) + value_low;
 
 		osMessagePut(SensorQHandle, (uint32_t)sensorData, osWaitForever);
 
-		ComErr = 0;
+		if (*sensorData < 0)
+			ComErr = 100;
+		else
+			ComErr = 0;
 	}
 	else
 	{
 		ComErr = 3;
 	}
 
-	TX_RX_SET = 0; // ÃüÁîÍê³É
+	TX_RX_SET = 0; // å‘½ä»¤å®Œæˆ
 }
 
-// Modbus¹¦ÄÜÂë05´¦Àí³ÌĞò   ///////////////////////////////////////////////////////³ÌĞòÒÑÑéÖ¤OK
-// Ğ´µ¥¸öÊä³ö¿ª¹ØÁ¿
+// ModbusåŠŸèƒ½ç 05å¤„ç†ç¨‹åº   ///////////////////////////////////////////////////////ç¨‹åºå·²éªŒè¯OK
+// å†™å•ä¸ªè¾“å‡ºå¼€å…³é‡
 void Modbus_05_Solve(void)
 {
 	uint16_t i;
@@ -400,15 +478,15 @@ void Modbus_05_Solve(void)
 	{
 		ComErr = 5;
 	}
-	TX_RX_SET = 0; // ÃüÁîÍê³É
+	TX_RX_SET = 0; // å‘½ä»¤å®Œæˆ
 }
 
-// Modbus¹¦ÄÜÂë06´¦Àí³ÌĞò   //////////////////////////////////////////////////////////////////////////////////ÒÑÑéÖ¤³ÌĞòOK
-// Ğ´µ¥¸ö±£³Ö¼Ä´æÆ÷
+// ModbusåŠŸèƒ½ç 06å¤„ç†ç¨‹åº   //////////////////////////////////////////////////////////////////////////////////å·²éªŒè¯ç¨‹åºOK
+// å†™å•ä¸ªä¿æŒå¯„å­˜å™¨
 void Modbus_06_Solve(void)
 {
-	uint16_t i;																									// Êı¾İ·µ»ØĞ£ÑéÓÃ
-	i = (((uint16_t)RS485_RX_BUFF[4]) << 8) | RS485_RX_BUFF[5]; // »ñÈ¡¼Ä´æÆ÷ÊıÁ¿
+	uint16_t i;																									// æ•°æ®è¿”å›æ ¡éªŒç”¨
+	i = (((uint16_t)RS485_RX_BUFF[4]) << 8) | RS485_RX_BUFF[5]; // è·å–å¯„å­˜å™¨æ•°é‡
 	if (i == Master_WriteReg[StartAddr])
 	{
 		ComErr = 0;
@@ -417,14 +495,14 @@ void Modbus_06_Solve(void)
 	{
 		ComErr = 6;
 	}
-	TX_RX_SET = 0; // ÃüÁîÍê³É
+	TX_RX_SET = 0; // å‘½ä»¤å®Œæˆ
 }
-// Modbus¹¦ÄÜÂë15´¦Àí³ÌĞò   //////////////////////////////////////////////////////³ÌĞòÒÑÑéÖ¤OK
-// Ğ´¶à¸öÊä³ö¿ª¹ØÁ¿
+// ModbusåŠŸèƒ½ç 15å¤„ç†ç¨‹åº   //////////////////////////////////////////////////////ç¨‹åºå·²éªŒè¯OK
+// å†™å¤šä¸ªè¾“å‡ºå¼€å…³é‡
 void Modbus_15_Solve(void)
 {
-	uint16_t i;																									// Êı¾İ·µ»ØĞ£ÑéÓÃ
-	i = (((uint16_t)RS485_RX_BUFF[4]) << 8) | RS485_RX_BUFF[5]; // »ñÈ¡¼Ä´æÆ÷ÊıÁ¿
+	uint16_t i;																									// æ•°æ®è¿”å›æ ¡éªŒç”¨
+	i = (((uint16_t)RS485_RX_BUFF[4]) << 8) | RS485_RX_BUFF[5]; // è·å–å¯„å­˜å™¨æ•°é‡
 	if (i == ValueOrLenth)
 	{
 		ComErr = 0;
@@ -433,15 +511,17 @@ void Modbus_15_Solve(void)
 	{
 		ComErr = 15;
 	}
-	TX_RX_SET = 0; // ÃüÁîÍê³É
+	TX_RX_SET = 0; // å‘½ä»¤å®Œæˆ
 }
 
-// Modbus¹¦ÄÜÂë16´¦Àí³ÌĞò /////////////////////////////////////////////////////////////////////////////////////////////////ÒÑÑéÖ¤³ÌĞòOK
-// Ğ´¶à¸ö±£³Ö¼Ä´æÆ÷
+// ModbusåŠŸèƒ½ç 16å¤„ç†ç¨‹åº /////////////////////////////////////////////////////////////////////////////////////////////////å·²éªŒè¯ç¨‹åºOK
+// å†™å¤šä¸ªä¿æŒå¯„å­˜å™¨
 void Modbus_16_Solve(void)
 {
-	uint16_t i;																											// Êı¾İ·µ»ØĞ£ÑéÓÃ
-	i = (((uint16_t)RS485_RX_BUFF[4]) << 8) | ((RS485_RX_BUFF[5])); // »ñÈ¡¼Ä´æÆ÷ÊıÁ¿
+	uint16_t i;																											// æ•°æ®è¿”å›æ ¡éªŒç”¨
+	i = (((uint16_t)RS485_RX_BUFF[4]) << 8) | ((RS485_RX_BUFF[5])); // è·å–å¯„å­˜å™¨æ•°é‡
+
+		// PC_USART("number: %0x", i);
 	if (i == ValueOrLenth)
 	{
 		ComErr = 0;
@@ -450,7 +530,7 @@ void Modbus_16_Solve(void)
 	{
 		ComErr = 16;
 	}
-	TX_RX_SET = 0; // ÃüÁîÍê³É
+	TX_RX_SET = 0; // å‘½ä»¤å®Œæˆ
 }
 
 uint16_t erroeback()

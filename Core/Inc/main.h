@@ -52,7 +52,7 @@ typedef enum
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
 // * 定义Release_Mode会关闭usart1串口
-// #define Release_Mode
+#define Release_Mode
 #ifndef Release_Mode
 #define PC_USART(fmt, ...)          huart_switch = 1; printf(fmt, ##__VA_ARGS__)
 #else
@@ -68,16 +68,16 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define Motor_In1_Pin GPIO_PIN_1
-#define Motor_In1_GPIO_Port GPIOC
-#define Motor_In2_Pin GPIO_PIN_2
-#define Motor_In2_GPIO_Port GPIOC
+#define PB02_LED_Pin GPIO_PIN_13
+#define PB02_LED_GPIO_Port GPIOC
 #define PB02_RST_Pin GPIO_PIN_4
 #define PB02_RST_GPIO_Port GPIOA
-#define EN_485_TX_Pin GPIO_PIN_7
-#define EN_485_TX_GPIO_Port GPIOD
-#define PB02_LED_Pin GPIO_PIN_5
-#define PB02_LED_GPIO_Port GPIOB
+#define Motor_In1_Pin GPIO_PIN_11
+#define Motor_In1_GPIO_Port GPIOA
+#define Motor_In2_Pin GPIO_PIN_12
+#define Motor_In2_GPIO_Port GPIOA
+#define EN_485_TX_Pin GPIO_PIN_8
+#define EN_485_TX_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 extern uint8_t TX_RX_SET;
 extern uint8_t ComErr;

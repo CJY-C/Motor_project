@@ -1,0 +1,224 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * File Name          : freertos.c
+  * Description        : Code for freertos applications
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2022 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+
+/* Includes ------------------------------------------------------------------*/
+#include "FreeRTOS.h"
+#include "task.h"
+#include "main.h"
+#include "cmsis_os.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* USER CODE BEGIN Variables */
+
+/* USER CODE END Variables */
+osThreadId BLECommunicationHandle;
+osThreadId DataManagerHandle;
+osThreadId SensorCommunicationHandle;
+osThreadId MotorControlHandle;
+osMessageQId SensorQHandle;
+osMessageQId BLEQHandle;
+osMessageQId MotorQHandle;
+
+/* Private function prototypes -----------------------------------------------*/
+/* USER CODE BEGIN FunctionPrototypes */
+
+/* USER CODE END FunctionPrototypes */
+
+void BLECommunicationEntry(void const * argument);
+void DataManagerEntry(void const * argument);
+void SensorCommunicationEntry(void const * argument);
+void MotorControlEntry(void const * argument);
+
+void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+
+/* GetIdleTaskMemory prototype (linked to static allocation support) */
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+
+/* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
+static StaticTask_t xIdleTaskTCBBuffer;
+static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
+
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
+{
+  *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
+  *ppxIdleTaskStackBuffer = &xIdleStack[0];
+  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+  /* place for user code */
+}
+/* USER CODE END GET_IDLE_TASK_MEMORY */
+
+/**
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* Create the queue(s) */
+  /* definition and creation of SensorQ */
+  osMessageQDef(SensorQ, 16, uint32_t);
+  SensorQHandle = osMessageCreate(osMessageQ(SensorQ), NULL);
+
+  /* definition and creation of BLEQ */
+  osMessageQDef(BLEQ, 16, uint32_t);
+  BLEQHandle = osMessageCreate(osMessageQ(BLEQ), NULL);
+
+  /* definition and creation of MotorQ */
+  osMessageQDef(MotorQ, 16, uint32_t);
+  MotorQHandle = osMessageCreate(osMessageQ(MotorQ), NULL);
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* definition and creation of BLECommunication */
+  osThreadDef(BLECommunication, BLECommunicationEntry, osPriorityAboveNormal, 0, 256);
+  BLECommunicationHandle = osThreadCreate(osThread(BLECommunication), NULL);
+
+  /* definition and creation of DataManager */
+  osThreadDef(DataManager, DataManagerEntry, osPriorityHigh, 0, 128);
+  DataManagerHandle = osThreadCreate(osThread(DataManager), NULL);
+
+  /* definition and creation of SensorCommunication */
+  osThreadDef(SensorCommunication, SensorCommunicationEntry, osPriorityRealtime, 0, 128);
+  SensorCommunicationHandle = osThreadCreate(osThread(SensorCommunication), NULL);
+
+  /* definition and creation of MotorControl */
+  osThreadDef(MotorControl, MotorControlEntry, osPriorityNormal, 0, 128);
+  MotorControlHandle = osThreadCreate(osThread(MotorControl), NULL);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+}
+
+/* USER CODE BEGIN Header_BLECommunicationEntry */
+/**
+  * @brief  Function implementing the BLECommunication thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_BLECommunicationEntry */
+void BLECommunicationEntry(void const * argument)
+{
+  /* USER CODE BEGIN BLECommunicationEntry */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END BLECommunicationEntry */
+}
+
+/* USER CODE BEGIN Header_DataManagerEntry */
+/**
+* @brief Function implementing the DataManager thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_DataManagerEntry */
+void DataManagerEntry(void const * argument)
+{
+  /* USER CODE BEGIN DataManagerEntry */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END DataManagerEntry */
+}
+
+/* USER CODE BEGIN Header_SensorCommunicationEntry */
+/**
+* @brief Function implementing the SensorCommunication thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_SensorCommunicationEntry */
+void SensorCommunicationEntry(void const * argument)
+{
+  /* USER CODE BEGIN SensorCommunicationEntry */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END SensorCommunicationEntry */
+}
+
+/* USER CODE BEGIN Header_MotorControlEntry */
+/**
+* @brief Function implementing the MotorControl thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_MotorControlEntry */
+void MotorControlEntry(void const * argument)
+{
+  /* USER CODE BEGIN MotorControlEntry */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END MotorControlEntry */
+}
+
+/* Private application code --------------------------------------------------*/
+/* USER CODE BEGIN Application */
+
+/* USER CODE END Application */
+

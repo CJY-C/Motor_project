@@ -23,7 +23,7 @@ struct Motor
 	// 常量
 	float Min;											/**< 最小转速 */
 	float Max;											/**< 最大转速 */
-	uint16_t e_Press; 							/**< 期望压力	 */
+	int16_t e_Press; 							/**< 期望压力	 */
 	
 	// 变化量
 	int16_t c_Press; 									/**< 当前压力 */

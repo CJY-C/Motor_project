@@ -1,5 +1,5 @@
 {
-  "name": "Assembly",
+  "name": "c8t6",
   "type": "ARM",
   "dependenceList": [],
   "srcDirs": [
@@ -22,7 +22,7 @@
             "name": "MDK-ARM",
             "files": [
               {
-                "path": "startup_stm32f103xe.s"
+                "path": "startup_stm32f103xb.s"
               }
             ],
             "folders": []
@@ -112,58 +112,58 @@
         "files": [],
         "folders": [
           {
-            "name": "CMSIS",
-            "files": [
-              {
-                "path": "../Core/Src/system_stm32f1xx.c"
-              }
-            ],
-            "folders": []
-          },
-          {
             "name": "STM32F1xx_HAL_Driver",
             "files": [
-              {
-                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.c"
-              },
-              {
-                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_dma.c"
-              },
-              {
-                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_exti.c"
-              },
-              {
-                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash_ex.c"
-              },
-              {
-                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash.c"
-              },
               {
                 "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio_ex.c"
               },
               {
-                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio.c"
-              },
-              {
-                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pwr.c"
-              },
-              {
-                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc_ex.c"
+                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.c"
               },
               {
                 "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc.c"
               },
               {
-                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.c"
+                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc_ex.c"
+              },
+              {
+                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio.c"
+              },
+              {
+                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_dma.c"
+              },
+              {
+                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.c"
+              },
+              {
+                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pwr.c"
+              },
+              {
+                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash.c"
+              },
+              {
+                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash_ex.c"
+              },
+              {
+                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_exti.c"
               },
               {
                 "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim.c"
               },
               {
-                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.c"
+                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.c"
               },
               {
-                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.c"
+                "path": "../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.c"
+              }
+            ],
+            "folders": []
+          },
+          {
+            "name": "CMSIS",
+            "files": [
+              {
+                "path": "../Core/Src/system_stm32f1xx.c"
               }
             ],
             "folders": []
@@ -216,12 +216,12 @@
   },
   "outDir": "build",
   "deviceName": null,
-  "packDir": ".pack/Keil/STM32F1xx_DFP.2.4.0",
+  "packDir": null,
   "miscInfo": {
-    "uid": "8ea350635186d74a7ff101b1c60ff477"
+    "uid": "d36e1524f439219b5c520211a5a90623"
   },
   "targets": {
-    "Assembly": {
+    "c8t6": {
       "excludeList": [],
       "toolchain": "AC5",
       "compileConfig": {
@@ -266,7 +266,7 @@
               "id": 1,
               "mem": {
                 "startAddr": "0x20000000",
-                "size": "0x10000"
+                "size": "0x5000"
               },
               "isChecked": true,
               "noInit": false
@@ -318,7 +318,7 @@
               "id": 1,
               "mem": {
                 "startAddr": "0x8000000",
-                "size": "0x80000"
+                "size": "0x10000"
               },
               "isChecked": true,
               "isStartup": true
@@ -330,7 +330,7 @@
                 "startAddr": "0x0",
                 "size": "0x0"
               },
-              "isChecked": true,
+              "isChecked": false,
               "isStartup": false
             }
           ]
@@ -346,7 +346,7 @@
         "speed": 4000,
         "address": "0x8000000",
         "elFile": "None",
-        "optionBytes": ".eide/assembly.st.option.bytes.ini",
+        "optionBytes": ".eide/c8t6.st.option.bytes.ini",
         "otherCmds": ""
       },
       "uploadConfigMap": {
@@ -373,18 +373,18 @@
           "../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3",
           "../Drivers/CMSIS/Device/ST/STM32F1xx/Include",
           "../Drivers/CMSIS/Include",
-          ".cmsis/include",
-          "RTE/_Assembly",
-          ".eide/deps",
           "../Core/Inc/BLE",
+          "../Core/Inc/Motor",
           "../Core/Inc/Sensor",
-          "../Core/Inc/Motor"
+          ".cmsis/include",
+          "RTE/_c8t6",
+          ".eide/deps"
         ],
         "libList": [],
         "sourceDirList": [],
         "defineList": [
           "USE_HAL_DRIVER",
-          "STM32F103xE"
+          "STM32F103xB"
         ]
       }
     }

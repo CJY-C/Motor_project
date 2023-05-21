@@ -123,15 +123,17 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART3_UART_Init();
-  MX_USART1_UART_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
+  MX_USART1_UART_Init();
   MX_USART2_UART_Init();
+  MX_USART3_UART_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   //  __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
   // ????mobus??????
   HAL_TIM_Base_Stop_IT(&htim2);
+  HAL_TIM_Base_Stop_IT(&htim4);
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */
@@ -219,6 +221,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     errpace = 1;
     __HAL_TIM_SET_COUNTER(htim,0);
     HAL_TIM_Base_Stop_IT(htim); // * ??????????????????
+  }
+
+  if (htim->Instance == TIM4)
+  {
+    PB02_Fram_Record_Struct.InfBit.FramFinishFlag = 1;
+    PB02_Fram_Record_Struct.Data_RX_BUF[PB02_Fram_Record_Struct.InfBit.FramLength] = '\0'; //* 添加字符串结�?
+    __HAL_TIM_SET_COUNTER(htim,0);
+    HAL_TIM_Base_Stop_IT(htim); 
+    if (BLECommunicationHandle == NULL)
+    {
+      PC_USART("ERROR!\n");
+    }
+    else
+      osSignalSet(BLECommunicationHandle, BLE_DATA_RECEIVED); //* �?测到总线空闲，就表示�?帧数据接收完�?
   }
   /* USER CODE END Callback 1 */
 }

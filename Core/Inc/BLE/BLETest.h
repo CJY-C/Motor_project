@@ -28,6 +28,7 @@ enum PC
     SPUP,        // 提速
     SPDOWN,      // 减速
     EPRESS,      // 期望压力值
+    MONITOR,      // 期望压力值
     NONE
 };
 
@@ -52,6 +53,14 @@ void bletest_led_off(void);
 // TODO: 可以选择发送一组压力数值
 void bletest_update(void);
 
+/// @brief 电机正转指令
+/// @param void
+void bletest_motor_forward(void);
+
+/// @brief 电机正转指令
+/// @param void
+void bletest_motor_backward(void);
+
 /// @brief 启动电机指令
 /// @param void
 void bletest_motor_start(void);
@@ -71,6 +80,10 @@ void bletest_motor_spdown(void);
 /// @brief 手机发送期望压力数值
 /// @param press 解析到手机端发送的压力值
 void bletest_motor_epress(uint16_t press);
+
+/// @brief 实时反馈数据
+/// @param uint16_t 开启或关闭
+void bletest_press_monitor(uint8_t enable);
 
 /// @brief 字符串转小写函数
 /// @param ps 字符串
